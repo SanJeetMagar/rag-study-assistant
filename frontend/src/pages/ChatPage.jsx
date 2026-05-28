@@ -15,10 +15,10 @@ export default function ChatPage() {
 const { sessionId } = useParams();
 const navigate = useNavigate();
 const location = useLocation();
-const { user } = useAuth();
+const { user, isStudent } = useAuth();
 // Role Gate: Redirect teachers back to dashboard
 useEffect(() => {
-if (user && user.role !== 'student') {
+if (user && !isStudent) {
 navigate('/dashboard');
 }
 }, [user, navigate]);

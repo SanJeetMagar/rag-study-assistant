@@ -9,7 +9,7 @@ import { Menu, LogOut, ChevronDown, User, Shield } from 'lucide-react';
  * responsive triggers, and the explicit profile dropdown action.
  */
 export default function Navbar({ onMenuToggle }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isTeacher } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -25,8 +25,6 @@ export default function Navbar({ onMenuToggle }) {
   }, []);
 
   if (!user) return null;
-
-  const isTeacher = user.role === 'teacher';
 
   return (
     <header className="h-16 border-b border-[var(--border)] bg-[var(--paper)] px-6 md:px-10 flex items-center justify-between shrink-0 relative z-30">

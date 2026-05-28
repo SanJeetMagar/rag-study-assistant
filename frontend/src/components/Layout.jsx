@@ -20,11 +20,9 @@ import {
  * a global loading progress bar, and mobile hamburger drawer.
  */
 export default function Layout({ children }) {
-  const { user } = useAuth();
+  const { user, isTeacher } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const isTeacher = user?.role === 'teacher';
 
   // Navigation configurations based on RBAC spec
   const navigation = isTeacher

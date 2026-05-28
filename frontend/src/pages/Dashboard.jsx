@@ -10,7 +10,7 @@ A highly tailored workspace hub representing Tribhuvan University course profile
 Features separate, context-rich dashboards for TEACHERS and STUDENTS.
 */
 export default function Dashboard() {
-const { user } = useAuth();
+const { user, isTeacher, isStudent } = useAuth();
 const [courses, setCourses] = useState([]);
 const [recentSessions, setRecentSessions] = useState([]);
 const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +31,7 @@ setCourses(coursesResponse.data || []);
 code
 Code
 // If user is a student, we also pull their recent chat sessions to show on dashboard
-    if (user?.role === 'student') {
+    if (isStudent) {
       // Fetch sessions for their primary course, or iterate to gather recent ones
       const sessionsList = [];
       if (coursesResponse.data && coursesResponse.data.length > 0) {
@@ -119,7 +119,6 @@ return (
 </div>
 );
 }
-const isTeacher = user?.role === 'teacher';
 return (
 <div className="p-8 max-w-7xl mx-auto space-y-10 min-h-screen">
 code

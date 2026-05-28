@@ -16,7 +16,7 @@ and STUDENT role (active query archives, interactive sandbox launcher).
 export default function CourseDetailPage() {
 const { id } = useParams();
 const navigate = useNavigate();
-const { user } = useAuth();
+const { user, isTeacher, isStudent } = useAuth();
 // Core Data States
 const [course, setCourse] = useState(null);
 const [documents, setDocuments] = useState([]);
@@ -39,7 +39,7 @@ Code
 const docsRes = await getDocuments(id);
   setDocuments(docsRes.data || []);
 
-  if (user?.role === 'student') {
+  if (isStudent) {
     const sessRes = await getChatSessions(id);
     setSessions(sessRes.data || []);
   }
@@ -139,7 +139,6 @@ return (
 </div>
 );
 }
-const isTeacher = user?.role === 'teacher';
 return (
 <div className="p-8 max-w-5xl mx-auto space-y-10 min-h-screen">
 code
