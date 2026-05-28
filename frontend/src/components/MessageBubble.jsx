@@ -1,6 +1,6 @@
 // src/components/MessageBubble.jsx
 import React from 'react';
-import { Sparkles, User, Database, ChevronDown, ChevronUp } from 'react-dom';
+import { Sparkles, User, Database, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 
 /**
