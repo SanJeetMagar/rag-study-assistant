@@ -111,10 +111,10 @@ setIsLoadingSidebar(true);
 const todayString = new Date().toLocaleDateString('np-NP', { month: 'short', day: 'numeric', year: 'numeric' });
 const res = await createChatSession({
 course_id: course.id,
-title: Discussion - ${todayString}
+title: `Discussion - ${todayString}`
 });
 // Redirect to the newly generated conversation environment
-navigate(/chat/${res.data.id}?course=${course.id});
+navigate(`/chat/${res.data.id}?course=${course.id}`);
 } catch (err) {
 setErrorMessage('Unable to initialize a new conversation workspace.');
 } finally {
