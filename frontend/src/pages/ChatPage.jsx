@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { getCourses, getChatSessions, getCourseDetail, createChatSession, askQuestion, getSessionMessages } from '../services/api';
 import MessageBubble from '../components/MessageBubble';
 import LoadingSpinner from '../components/LoadingSpinner';
 /**
@@ -55,18 +55,18 @@ async function initializeWorkspace() {
     setErrorMessage('');
 
     // 1. Fetch current conversation stream
-    const msgRes = await api.getChatMessages(sessionId);
+    const msgRes = await getSessionMessages(sessionId);
     const fetchedMessages = msgRes.data || [];
     setMessages(fetchedMessages);
 
     // 2. Discover Parent Course configuration
     if (!activeCourseId) {
       // If courseId is not explicitly in URL params, check courses to find this active session
-      const coursesRes = await api.getCourses();
+      const coursesRes = await getCourses();
       const userCourses = coursesRes.data || [];
       
       for (const c of userCourses) {
-        const sessRes = await api.getChatSessions(c.id);
+        const sessRes = await getChatSessions(c.id);
         const match = sessRes.data?.find(s => String(s.id) === String(sessionId));
         if (match) {
           activeCourseId = c.id;
@@ -77,10 +77,10 @@ async function initializeWorkspace() {
       }
     } else {
       // Resolve course info directly if provided
-      const courseRes = await api.getCourse(activeCourseId);
+      const courseRes = await getCourseDetail(activeCourseId);
       setCourse(courseRes.data);
       
-      const sessRes = await api.getChatSessions(activeCourseId);
+      const sessRes = await getChatSessions(activeCourseId);
       const activeSess = sessRes.data?.find(s => String(s.id) === String(sessionId));
       if (activeSess) setCurrentSession(activeSess);
     }
@@ -88,7 +88,7 @@ async function initializeWorkspace() {
     // 3. Populate sidebar list of historical workspaces for this specific course
     if (activeCourseId) {
       setIsLoadingSidebar(true);
-      const sessListRes = await api.getChatSessions(activeCourseId);
+      const sessListRes = await getChatSessions(activeCourseId);
       setSessions(sessListRes.data || []);
     }
   } catch (err) {
@@ -109,7 +109,7 @@ if (!course) return;
 try {
 setIsLoadingSidebar(true);
 const todayString = new Date().toLocaleDateString('np-NP', { month: 'short', day: 'numeric', year: 'numeric' });
-const res = await api.createChatSession({
+const res = await createChatSession({
 course_id: course.id,
 title: Discussion - ${todayString}
 });
@@ -143,7 +143,7 @@ setMessages(prev => [...prev, temporaryUserMessage]);
 try {
   setIsSending(true);
 
-  const response = await api.askQuestion({
+  const response = await askQuestion({
     question: userText,
     course_id: course.id,
     session_id: sessionId

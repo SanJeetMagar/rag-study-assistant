@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { getCourseDetail, getDocuments, getChatSessions, createChatSession, deleteDocument, deleteCourse } from '../services/api';
 import PDFUploader from '../components/PDFUploader';
 import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -32,15 +32,15 @@ const [isCopied, setIsCopied] = useState(false);
 const loadCourseContext = async () => {
 try {
 setErrorMessage('');
-const courseRes = await api.getCourse(id);
+const courseRes = await getCourseDetail(id);
 setCourse(courseRes.data);
 code
 Code
-const docsRes = await api.getDocuments(id);
+const docsRes = await getDocuments(id);
   setDocuments(docsRes.data || []);
 
   if (user?.role === 'student') {
-    const sessRes = await api.getChatSessions(id);
+    const sessRes = await getChatSessions(id);
     setSessions(sessRes.data || []);
   }
 } catch (err) {
@@ -66,7 +66,7 @@ if (!hasActivePipeline) return;
 // Establish polling interval of 3 seconds to fetch document lists
 const interval = setInterval(async () => {
   try {
-    const res = await api.getDocuments(id);
+    const res = await getDocuments(id);
     setDocuments(res.data || []);
   } catch (err) {
     // Suppress polling errors to preserve visual persistence
@@ -89,7 +89,7 @@ setIsCreatingSession(true);
 const today = new Date().toLocaleDateString('np-NP', { month: 'short', day: 'numeric', year: 'numeric' });
 code
 Code
-const res = await api.createChatSession({
+  const res = await createChatSession({
     course_id: id,
     title: `Discussion Workspace - ${today}`
   });
@@ -109,7 +109,7 @@ setDocuments((prev) => [uploadedDoc, ...prev]);
 // Delete document action workflow
 const handleDeleteDocument = async (docId) => {
 try {
-await api.deleteDocument(docId);
+await deleteDocument(docId);
 setDocuments((prev) => prev.filter((d) => d.id !== docId));
 setIsDeletingDocId(null);
 } catch (err) {
@@ -119,7 +119,7 @@ setErrorMessage('Failed to delete selected syllabus file.');
 // Delete entire course module (Teacher only)
 const handleDeleteCourse = async () => {
 try {
-await api.deleteCourse(id);
+await deleteCourse(id);
 navigate('/dashboard');
 } catch (err) {
 setErrorMessage('Failed to delete entire course module.');

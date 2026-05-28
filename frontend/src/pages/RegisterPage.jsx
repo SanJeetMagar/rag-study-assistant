@@ -2,7 +2,7 @@
 // src/pages/RegisterPage.jsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { registerUser } from '../services/api';
 /**
 RegisterPage Component
 Handles user account creation for Tribhuvan University RAG Study Assistant.
@@ -61,7 +61,7 @@ if (Object.keys(newErrors).length > 0) {
 
 try {
   setIsSubmitting(true);
-  await api.register({
+  await registerUser({
     username: username.trim(),
     email: email.trim(),
     password,

@@ -1,7 +1,7 @@
 // src/pages/EnrollPage.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { getCourses, enrollInCourse } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 /**
@@ -31,7 +31,7 @@ export default function EnrollPage() {
       setIsSubmitting(true);
       
       // Step 1: Scan all course IDs to see which one matches this code, since backend requires course ID for enrollment.
-      const allCourses = await api.getCourses();
+      const allCourses = await getCourses();
       const matchedCourse = allCourses.find(
         (c) => c.course_code.toUpperCase() === trimmedCode.toUpperCase()
       );
@@ -41,8 +41,7 @@ export default function EnrollPage() {
       }
 
       // Step 2: Call enrollment endpoint
-      await api.enrollInCourse(matchedCourse.id, trimmedCode);
-      
+await enrollInCourse(matchedCourse.id, trimmedCode);
       setSuccessCourse(matchedCourse);
       
       // Redirect to Dashboard after 2.5 seconds to display progress

@@ -1,6 +1,6 @@
 // src/pages/DocumentManagerPage.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import api from '../services/api';
+import { getCourses, getDocuments, deleteDocument } from '../services/api';
 import PDFUploader from '../components/PDFUploader';
 import StatusBadge from '../components/StatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -34,7 +34,7 @@ export default function DocumentManagerPage() {
     async function fetchCourses() {
       try {
         setIsLoadingCourses(true);
-        const data = await api.getCourses();
+        const data = await getCourses();
         setCourses(data);
         if (data.length > 0) {
           setSelectedCourseId(data[0].id.toString());
@@ -53,7 +53,7 @@ export default function DocumentManagerPage() {
     if (!courseId) return;
     try {
       setIsLoadingDocs(true);
-      const data = await api.getDocuments(courseId);
+      const data = await getDocuments(courseId);
       setDocuments(data);
       setErrorMessage(null);
     } catch (err) {
@@ -75,7 +75,7 @@ export default function DocumentManagerPage() {
   const checkProcessingStatus = useCallback(async () => {
     if (!selectedCourseId) return;
     try {
-      const data = await api.getDocuments(selectedCourseId);
+      const data = await getDocuments(selectedCourseId);
       setDocuments(data);
       
       // Stop polling if no documents are in an intermediate state
@@ -129,7 +129,7 @@ export default function DocumentManagerPage() {
     if (!docToDelete) return;
     try {
       setIsDeleting(true);
-      await api.deleteDocument(docToDelete.id);
+      await deleteDocument(docToDelete.id);
       setDocuments((prev) => prev.filter((d) => d.id !== docToDelete.id));
       setDocToDelete(null);
     } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { getCourses, getChatSessions, createCourse } from '../services/api';
 import CourseCard from '../components/CourseCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 /**
@@ -26,7 +26,7 @@ useEffect(() => {
 async function loadDashboardData() {
 try {
 setIsLoading(true);
-const coursesResponse = await api.getCourses();
+const coursesResponse = await getCourses();
 setCourses(coursesResponse.data || []);
 code
 Code
@@ -36,7 +36,7 @@ Code
       const sessionsList = [];
       if (coursesResponse.data && coursesResponse.data.length > 0) {
         for (const course of coursesResponse.data.slice(0, 3)) {
-          const res = await api.getChatSessions(course.id);
+          const res = await getChatSessions(course.id);
           if (res.data) {
             // Annotate session with course info
             const annotated = res.data.map(s => ({ ...s, courseName: course.title }));
@@ -76,7 +76,7 @@ if (Object.keys(errors).length > 0) {
 
 try {
   setIsSubmitting(true);
-  const res = await api.createCourse({
+const res = await createCourse({
     title: newTitle.trim(),
     course_code: newCode.trim().toUpperCase(),
     description: newDesc.trim()
