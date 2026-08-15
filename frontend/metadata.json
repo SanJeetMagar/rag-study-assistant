@@ -1,0 +1,6 @@
+{
+  "name": "Academic Portal",
+  "description": "A refined Academic Learning Management System dashboard with comprehensive student and teacher workspaces.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
