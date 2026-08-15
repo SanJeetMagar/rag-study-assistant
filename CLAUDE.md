@@ -84,8 +84,12 @@ The cost: a server restart mid-ingestion strands a document in `processing`. `re
 - **Custom user model** (`users.User`, email as `USERNAME_FIELD`). It was introduced before the first migration, which is the only cheap moment. Changing it now means rebuilding the database.
 - **`backend/.env` is gitignored** and holds `GEMINI_API_KEY`. `.env.example` is committed. Never commit the real one.
 - **Frontend server state is TanStack Query**; auth is `AuthContext`. There is no global store — the previous `LMSContext` (all state in one context, mirrored to `localStorage`) is gone, along with the fake auth and canned chatbot replies.
-- **Model IDs**: use current ones (`claude-opus-5`, `gemini-2.0-flash`). Current Claude models reject `temperature`/`top_p`, and a refusal returns HTTP 200 with `stop_reason: "refusal"` — check it before reading `content`.
+- **Gemini models get retired.** `gemini-2.0-flash` and `gemini-2.5-flash` are already gone (404, or "no longer available to new users"). Current default is `gemini-3.7-flash`, set in `.env`. List what a key can actually use with `client.models.list()` — don't guess a name.
+- **Free-tier Gemini rate-limits per minute.** Several questions in quick succession trips it; the provider retries twice with backoff then reports it plainly.
+- **Claude model IDs**: `claude-opus-5`. Current Claude models reject `temperature`/`top_p`, and a refusal returns HTTP 200 with `stop_reason: "refusal"` — check it before reading `content`.
 
 ## Git
 
-`backend` and `frontend` were previously recorded as **gitlinks** (mode 160000) with no `.gitmodules`, so `git status` showed clean regardless of changes, `git add` inside them silently did nothing, and no source was in history. Fixed with `git rm --cached backend frontend`; both are ordinary tracked directories now. Nothing has been committed yet — the working tree holds the whole build.
+`backend` and `frontend` were previously recorded as **gitlinks** (mode 160000) with no `.gitmodules`, so `git status` showed clean regardless of changes, `git add` inside them silently did nothing, and no source was in history. Fixed with `git rm --cached backend frontend`; both are ordinary tracked directories now, and the build is committed.
+
+Nothing has been pushed — there is no remote configured. `backend/.env` holds the real API key and is gitignored; verify with `git ls-files | grep .env` (should return only `.env.example` files) before any push.
