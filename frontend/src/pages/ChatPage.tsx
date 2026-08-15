@@ -14,12 +14,19 @@ function matchQuality(distance: number) {
   return {label: "weak match", className: "text-zinc-500"};
 }
 
-const Citations: React.FC<{citations: Citation[]}> = ({citations}) => {
+const NOT_COVERED = "not covered in your uploaded syllabus";
+
+const Citations: React.FC<{citations: Citation[]; declined: boolean}> = ({
+  citations,
+  declined,
+}) => {
   if (citations.length === 0) return null;
   return (
     <div className="mt-3 pt-3 border-t border-amber-200/70">
       <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">
-        Answered from
+        {/* Labelling these "Answered from" under a refusal claims the passages
+            answered the question when they did not. */}
+        {declined ? "Closest passages searched — none answered this" : "Answered from"}
       </p>
       <ul className="space-y-1">
         {citations.map((citation) => {
@@ -59,7 +66,10 @@ const Bubble: React.FC<{message: Message}> = ({message}) => {
             <div className="prose prose-sm max-w-none prose-p:my-1.5 prose-headings:mt-2 prose-headings:mb-1 prose-li:my-0.5">
               <ReactMarkdown>{message.content}</ReactMarkdown>
             </div>
-            <Citations citations={message.citations ?? []} />
+            <Citations
+              citations={message.citations ?? []}
+              declined={message.content.includes(NOT_COVERED)}
+            />
           </>
         ) : (
           <p className="whitespace-pre-wrap">{message.content}</p>
