@@ -11,6 +11,10 @@ from .serializers import CourseSerializer, JoinCourseSerializer
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     permission_classes = viewsets.ModelViewSet.permission_classes + [IsCourseTeacher]
+    # Never used at runtime -- get_queryset() below replaces it. It exists so
+    # the schema generator can identify the model without a request, since
+    # get_queryset() reads request.user and there is no request at that point.
+    queryset = Course.objects.none()
 
     def get_queryset(self):
         """Courses the user teaches, plus those they're enrolled in."""

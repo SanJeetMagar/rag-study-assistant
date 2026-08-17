@@ -1,4 +1,5 @@
 from django.db import transaction
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -9,7 +10,12 @@ from services.generation import GenerationError
 from services.retriever import generate_answer
 
 from .models import ChatSession, Message
-from .serializers import AskSerializer, ChatSessionSerializer, MessageSerializer
+from .serializers import (
+    AskResponseSerializer,
+    AskSerializer,
+    ChatSessionSerializer,
+    MessageSerializer,
+)
 
 # How many prior turns to replay so the assistant can follow "explain that
 # further" without the whole transcript inflating every request.
@@ -18,6 +24,8 @@ HISTORY_TURNS = 6
 
 class ChatSessionViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSessionSerializer
+    # Schema-generation placeholder; see the note in courses/views.py.
+    queryset = ChatSession.objects.none()
 
     def get_queryset(self):
         return ChatSession.objects.filter(student=self.request.user).select_related('course')
@@ -37,6 +45,10 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
             else Response(serializer.data)
 
 
+@extend_schema(
+    responses=MessageSerializer(many=True),
+    summary='Full transcript for one chat session',
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def session_messages(request, pk):
@@ -48,6 +60,24 @@ def session_messages(request, pk):
     return Response(MessageSerializer(session.messages.all(), many=True).data)
 
 
+@extend_schema(
+    request=AskSerializer,
+    responses={
+        200: AskResponseSerializer,
+        403: OpenApiResponse(description='You are not enrolled in this course.'),
+        404: OpenApiResponse(description='Course or chat session not found.'),
+        503: OpenApiResponse(
+            description='The language model could not be reached, or the free '
+            'tier is rate limiting. The message says which.'
+        ),
+    },
+    summary='Ask a question about a course syllabus',
+    description=(
+        'Embeds the question, retrieves the closest passages from that '
+        "course's documents by cosine distance, and answers from those alone. "
+        'Returns the answer with the chunks it used and how close each was.'
+    ),
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def ask(request):

@@ -18,6 +18,8 @@ from .serializers import (
 class DocumentViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentSerializer
     parser_classes = [MultiPartParser, FormParser]
+    # Schema-generation placeholder; see the note in courses/views.py.
+    queryset = Document.objects.none()
 
     def get_queryset(self):
         """

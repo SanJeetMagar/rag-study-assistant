@@ -20,13 +20,15 @@ class CourseSerializer(serializers.ModelSerializer):
         # course_code is generated server-side so two courses can't collide.
         read_only_fields = ['id', 'teacher', 'course_code', 'created_at']
 
-    def get_student_count(self, obj):
+    # Return type hints are what let the schema generator document these as
+    # integers rather than falling back to string.
+    def get_student_count(self, obj) -> int:
         return obj.students.count()
 
-    def get_document_count(self, obj):
+    def get_document_count(self, obj) -> int:
         return obj.documents.count()
 
-    def get_my_role(self, obj):
+    def get_my_role(self, obj) -> str:
         user = self.context['request'].user
         return 'teacher' if obj.teacher_id == user.id else 'student'
 

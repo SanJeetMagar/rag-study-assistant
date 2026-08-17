@@ -29,3 +29,29 @@ class AskSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError('Ask a question first.')
         return value
+
+
+class CitationSerializer(serializers.Serializer):
+    """One retrieved chunk and how close it was. Documentation only."""
+
+    chunk_id = serializers.IntegerField()
+    document_title = serializers.CharField()
+    page_number = serializers.IntegerField(allow_null=True)
+    distance = serializers.FloatField(
+        help_text='Cosine distance: 0 is identical meaning, 1 is unrelated.'
+    )
+
+
+class AskResponseSerializer(serializers.Serializer):
+    """
+    Shape of a successful /ask/ response.
+
+    Declared so the OpenAPI schema can describe this endpoint; the view builds
+    the payload itself rather than passing it through here.
+    """
+
+    session_id = serializers.IntegerField()
+    answer = serializers.CharField()
+    chunks_used = serializers.IntegerField()
+    citations = CitationSerializer(many=True)
+    message = MessageSerializer()

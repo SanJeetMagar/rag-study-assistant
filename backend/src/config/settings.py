@@ -42,6 +42,8 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'corsheaders',
+    # Generates the OpenAPI schema that Swagger UI reads.
+    'drf_spectacular',
 
     'apps.users',
     'apps.courses',
@@ -121,6 +123,37 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    # Without this, DRF falls back to its own older generator and the schema
+    # comes out incomplete.
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# ------------------------------------------------------------------- API docs
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'RAG Study Assistant API',
+    'DESCRIPTION': (
+        'Teachers upload syllabus PDFs; students ask questions and receive '
+        'answers drawn only from that material, with citations.\n\n'
+        '**To try an endpoint:** call `/api/auth/login/` below, copy the '
+        '`access` value from the response, press **Authorize** at the top '
+        'right, and paste it. Every other endpoint needs it.'
+    ),
+    'VERSION': '1.0.0',
+    # The schema is served at its own URL; don't repeat it inside itself.
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Strip the leading /api/ so operations are grouped by resource name.
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,  # survives a page refresh while demoing
+        'displayRequestDuration': True,
+    },
+    # Two unrelated fields are both called "role" (a user's teacher/student
+    # role, and a message's user/assistant role). Name them, or the generator
+    # invents something like "Role9b8Enum".
+    'ENUM_NAME_OVERRIDES': {
+        'UserRoleEnum': 'apps.users.models.User.Role',
+        'MessageRoleEnum': 'apps.chat.models.Message.Role',
+    },
 }
 
 SIMPLE_JWT = {
