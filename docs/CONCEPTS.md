@@ -202,7 +202,7 @@ it to answer from nothing else."*
 | **`multipart/form-data`** | PDF upload | The encoding used to send binary files. |
 | **Same-origin policy** | Why the proxy exists | Browsers block scripts reading responses from a different origin unless allowed. |
 | **Async / await, Promise** | All of `api.ts` | Handling operations that finish later without freezing the UI. |
-| **Environment / port** | 3000, 8000, 5433 | Which process listens where. |
+| **Environment / port** | 3000, 8001, 5433 | Which process listens where. |
 
 ---
 

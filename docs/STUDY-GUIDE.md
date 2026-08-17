@@ -91,7 +91,7 @@ press **Retry** on it.
 | What | Port | Change in |
 |---|---|---|
 | Postgres | 5433 | `start.sh` and `backend/.env` (`POSTGRES_PORT`) |
-| Django | 8000 | `start.sh`, and `frontend/vite.config.ts` proxy target |
+| Django | **8001** | `BACKEND_PORT` in `start.sh`; `vite.config.ts` follows it |
 | Vite | 3000 | `frontend/package.json` (`--port=3000`) |
 
 Postgres is on **5433 not 5432** because your `techbee_db` container already
@@ -445,7 +445,7 @@ cd frontend && npm run lint                                    # TypeScript chec
 
 # Admin
 cd backend
-../venv/bin/python manage.py createsuperuser    # then http://localhost:8000/admin
+../venv/bin/python manage.py createsuperuser    # then http://localhost:8001/admin
 ../venv/bin/python manage.py requeue_stuck_documents
 
 # Database

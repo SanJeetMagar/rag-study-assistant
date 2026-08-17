@@ -87,11 +87,27 @@ api.interceptors.response.use(
 /** Pull a readable message out of a DRF error body. */
 export function errorMessage(error: unknown, fallback = "Something went wrong."): string {
   if (!axios.isAxiosError(error)) return fallback;
-  const data = error.response?.data as Record<string, unknown> | undefined;
-  if (!data) return error.message || fallback;
-  if (typeof data.detail === "string") return data.detail;
 
-  const first = Object.entries(data)[0];
+  const status = error.response?.status;
+
+  if (!error.response) {
+    return "Cannot reach the server. Is the backend running?";
+  }
+
+  const data = error.response.data;
+
+  // A string body means the response was not DRF JSON at all -- typically an
+  // HTML error page, which happens when /api is proxied somewhere unexpected.
+  // Iterating it as an object would read character 0 and render "0: <".
+  if (typeof data !== "object" || data === null) {
+    return `Server returned ${status} but not an API response. Check that the `
+      + `backend is running and that Vite is proxying /api to it.`;
+  }
+
+  const body = data as Record<string, unknown>;
+  if (typeof body.detail === "string") return body.detail;
+
+  const first = Object.entries(body)[0];
   if (!first) return fallback;
   const [field, value] = first;
   const text = Array.isArray(value) ? value[0] : value;

@@ -19,13 +19,18 @@ export default defineConfig(() => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
       // Proxy the API to Django so the browser sees a single origin.
       // CORS never enters the picture in development because of this.
+      //
+      // Port 8001, not Django's default 8000: another project on this machine
+      // already listens there. If /api ever reaches the wrong server you get
+      // an HTML error page instead of JSON. Keep in step with BACKEND_PORT
+      // in start.sh.
       proxy: {
         '/api': {
-          target: 'http://localhost:8000',
+          target: `http://localhost:${process.env.BACKEND_PORT ?? 8001}`,
           changeOrigin: true,
         },
         '/media': {
-          target: 'http://localhost:8000',
+          target: `http://localhost:${process.env.BACKEND_PORT ?? 8001}`,
           changeOrigin: true,
         },
       },

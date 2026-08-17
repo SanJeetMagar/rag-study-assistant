@@ -18,8 +18,8 @@ Open **http://localhost:3000**
 | Service | Port | Notes |
 |---|---|---|
 | Postgres (Docker) | **5433** | not 5432 — another project holds that |
-| Django API | 8000 | |
-| Vite frontend | 3000 | proxies `/api` to 8000 |
+| Django API | **8001** | not 8000 — another project uses that |
+| Vite frontend | 3000 | proxies `/api` to 8001 |
 
 ---
 
@@ -94,7 +94,7 @@ book you ask for. Google never tells you a model when issuing a key.
 cd backend && ../venv/bin/python manage.py test services.tests
 cd frontend && npm run lint
 
-# admin panel at localhost:8000/admin
+# admin panel at localhost:8001/admin
 cd backend && ../venv/bin/python manage.py createsuperuser
 
 # document stuck on "Processing" after a restart

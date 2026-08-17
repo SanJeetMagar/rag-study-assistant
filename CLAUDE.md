@@ -34,7 +34,7 @@ The venv is at the repo root (`./venv`), not inside `backend/`. There is still n
 
 ```bash
 cd frontend
-npm run dev       # :3000, proxies /api to :8000
+npm run dev       # :3000, proxies /api to :8001
 npm run lint      # tsc --noEmit — the only check; there is no ESLint, no test runner
 npm run build
 ```
