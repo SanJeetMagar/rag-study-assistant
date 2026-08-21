@@ -21,8 +21,9 @@ docker start studyai-pg     # or the full docker run in README.md
 ```bash
 cd backend
 ../venv/bin/python manage.py runserver
-../venv/bin/python manage.py test services.tests                          # all 31
+../venv/bin/python manage.py test services.tests                          # all 57
 ../venv/bin/python manage.py test services.tests.test_pdf_processor       # pure functions, ~0.002s
+../venv/bin/python manage.py test services.tests.test_quizzes             # quiz generation + marking
 ../venv/bin/python manage.py test services.tests.test_api.ChatTests       # one class
 ../venv/bin/python manage.py test services.tests.test_api.ChatTests.test_ask_retrieves_the_topically_matching_chunk
 ../venv/bin/python manage.py requeue_stuck_documents                      # clear stranded ingestions
@@ -49,13 +50,15 @@ Everything is one of these. Keep them separate when debugging — a retrieval bu
 
 **Query** (every question): question → embed → cosine search top-4 within the course → build prompt → LLM → answer + citations.
 
+**Quiz generation** reuses the stored passages: sample across the document → prompt for questions → validate JSON → store each against its source chunk. Same grounding rule — a question testing material the syllabus lacks is an invented answer wearing a different hat.
+
 ### `services/` is not a Django app
 
 It is a plain package holding pure logic, deliberately kept out of `INSTALLED_APPS`. Django apps own HTTP and the ORM; `services/` owns the pipeline.
 
 - [pdf_processor.py](backend/src/services/pdf_processor.py) imports nothing from Django — chunking and cleaning are testable with no database.
 - [embedder.py](backend/src/services/embedder.py) loads `all-MiniLM-L6-v2` **once at module level**, thread-safely. Loading it per call is the single biggest performance trap here: the model takes seconds to load and a 130-chunk document would pay that 130 times.
-- [retriever.py](backend/src/services/retriever.py) is the only module in `services/` that touches the ORM.
+- [retriever.py](backend/src/services/retriever.py) and [quiz.py](backend/src/services/quiz.py) are the only modules in `services/` that touch the ORM.
 - [generation/](backend/src/services/generation/) — `gemini` (default, free tier), `anthropic`, `mock`. Selected by `LLM_PROVIDER`. Tests force `mock`, so the suite needs no network and costs nothing.
 
 ### Corrections to the original spec
@@ -65,6 +68,8 @@ The project brief this was built from had three defects. They are fixed, and the
 1. **Chunking dropped every document's tail.** The original ended the loop with `if len(chunk_words) < 50: break`, silently discarding the final short chunk of every file.
 2. **`page_number` was unpopulatable.** Pages were flattened into one string before chunking, destroying the information. Page provenance is now carried through, and a chunk is attributed to the page contributing *most* of its words — not the page it started on, which sends readers to the wrong page when a chunk straddles a break.
 3. **Retrieval trusted a client-supplied `course_id`.** Any student could read any course. Every course-scoped endpoint now goes through `get_accessible_course()` in [apps/courses/permissions.py](backend/src/apps/courses/permissions.py).
+
+A fourth was found later, in code written for this project: **leaving a course was refused as if it were editing one**, because `IsCourseTeacher` treated every non-safe method as a course edit. `join` and `leave` change the caller's own membership and now opt out via `membership_actions`.
 
 Added beyond the spec: `Message.citations` stores the retrieved chunk IDs and their cosine distances, so retrieval quality can be demonstrated rather than described.
 
@@ -77,6 +82,16 @@ The spec called for IVFFlat. IVFFlat clusters the rows present at build time, so
 Upload returns immediately; a thread advances `Document.status` (`pending` → `processing` → `ready`/`error`) and the frontend polls `/status/`. Chosen over Celery because that means running Redis and a worker for a single-machine project.
 
 The cost: a server restart mid-ingestion strands a document in `processing`. `requeue_stuck_documents` clears those. Don't "fix" this by making upload synchronous — a 20-second hanging request is worse.
+
+### Authorisation lives in one module
+
+[apps/courses/permissions.py](backend/src/apps/courses/permissions.py) is the only place that decides who may do what: `role_in_course`, `can_view_course`, `can_manage_course`, `viewable_courses` (the queryset twin), `require_course_manager`. The teacher check was previously hand-written in eight places across six files. Don't add a ninth — extend the module.
+
+### Quizzes withhold the answer key
+
+`QuestionTakingSerializer` omits `correct_index`, `expected_answer` and `explanation`; `QuestionReviewSerializer` includes them. The taking payload reaches the browser. There's a test asserting the absence — don't "simplify" the two serializers into one.
+
+MCQ marking is deterministic by design. Don't route it through the LLM: comparing two integers is instant, free and exact, and the model would be slower, cost money and occasionally disagree with itself. It's used only for short answers, where there's no key.
 
 ## Conventions worth knowing
 

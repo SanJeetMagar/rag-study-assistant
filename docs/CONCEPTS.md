@@ -6,6 +6,8 @@ which tells you the order to learn them in.
 
 Marked **★** = likely to be asked in your defense. Learn those properly first.
 
+Seventeen sections. If it appears in this project, it is here.
+
 ---
 
 ## 1. The AI / retrieval core
@@ -62,6 +64,8 @@ it to answer from nothing else."*
 | **Atomic transaction** | `@transaction.atomic` in `chat/views.py` | All-or-nothing database writes. Stops a question being saved without its answer. |
 | **`update_fields`** | `ingestion.py` | Saving only the changed columns instead of the whole row. |
 | **Django admin** | `apps/*/admin.py` | Auto-generated CRUD interface at `/admin`. Useful for demos. |
+| **Inline admin** | `QuestionInline` | Editing child rows inside the parent's admin page. |
+| **`FileResponse`** | `documents/views.py` `file()` | Streaming a file back through a view, so the enrollment check applies before a byte is sent. |
 
 ---
 
@@ -80,6 +84,9 @@ it to answer from nothing else."*
 | **★ HTTP status codes** | Throughout | 200 OK, 201 Created, 204 No Content, 400 Bad Request, 401 Unauthenticated, 403 Forbidden, 404 Not Found, 503 Service Unavailable. |
 | **Content types** | Upload endpoint | `application/json` for data, `multipart/form-data` for file uploads. |
 | **Idempotency** | `GET` vs `POST` | Repeating a `GET` changes nothing; repeating a `POST` creates another row. |
+| **★ OpenAPI / Swagger** | `/api/docs/`, `drf-spectacular` | A machine-readable description of every endpoint, generated from the code so it cannot drift out of date. Swagger UI sends real requests against it. |
+| **Schema annotation** | `@extend_schema` on `ask` | Plain function views have no serializer to inspect, so their request and response shapes must be declared or they are dropped from the docs entirely. |
+| **Different serializer per action** | `get_serializer_class` | The list view omits questions the detail view carries; the taking view omits the answer key the review view shows. |
 
 **Know the difference:** **401** means *I don't know who you are*; **403** means
 *I know who you are and you're not allowed*. Your enrollment check returns 403.
@@ -98,7 +105,9 @@ it to answer from nothing else."*
 | **Secrets management** | `.env` + `.gitignore` | Keys live in an untracked file. `.env.example` documents the shape without the values. |
 | **CORS** | `django-cors-headers`, Vite proxy | Browsers block cross-origin requests. We avoid the problem entirely by proxying `/api` through Vite so everything is same-origin. |
 | **File upload validation** | `DocumentSerializer` | Checking extension and size. Never trust an uploaded file. |
-| **Least privilege** | Teacher-only upload/delete | Each role gets only the permissions it needs. |
+| **Least privilege** | Teacher-only upload/delete/quiz-creation | Each role gets only the permissions it needs. Quiz generation costs an API call, so it is not a button every student can press against the course quota. |
+| **★ Protected file serving** | `/documents/{id}/file/` | Django serves `MEDIA_ROOT` unauthenticated, so linking straight to `/media/` would let anyone with a URL read any course's PDF. Serving through the viewset applies the enrollment filter first. |
+| **Object URL / blob** | `documents.fileUrl` | An `<iframe>` cannot send an `Authorization` header, so the file is fetched with the token attached and handed to the iframe as an in-memory URL, revoked on unmount. |
 
 ---
 
@@ -187,7 +196,9 @@ it to answer from nothing else."*
 | **Utility-first CSS** | Tailwind classes throughout | Compose styles from small classes (`px-4 py-2 rounded-lg`) instead of writing custom CSS. |
 | **Design tokens** | `@theme` in `index.css` | Named values (fonts, colours) defined once and reused. |
 | **Responsive design** | `sm:` `md:` `lg:` prefixes | Different layout at different screen widths. |
-| **Accessibility** | `aria-label`, `role="alert"`, `aria-current` | Making the UI usable with a screen reader. Cheap to add, and markers notice. |
+| **Accessibility** | `aria-label`, `role="alert"`, `aria-expanded` | Making the UI usable with a screen reader. `role="alert"` means a failure is announced, not just coloured red. |
+| **★ Type scale** | `index.css` `.t-display` … `.t-numeric` | Seven classes named for their role rather than their size. Eight Tailwind sizes were previously in use with no system, `text-lg` alone appearing eleven times for headings, labels and body copy alike. |
+| **Design tokens vs components** | `@theme` vs `PageHeader` | A token is a value reused everywhere; a component is a *pattern* reused everywhere. The page header was copy-pasted across five pages before it became one. |
 
 ---
 
@@ -269,21 +280,54 @@ it to answer from nothing else."*
 
 ---
 
+## 16. Quiz generation and marking
+
+| Concept | Where | What it means |
+|---|---|---|
+| **★ Grounded generation** | `services/quiz.py` | Questions are written from the document's own passages. A quiz testing material the syllabus does not cover is the same failure as an invented answer, only harder to notice. |
+| **★ Provenance** | `Question.source_chunk` | Every question records the passage it came from, so a wrong answer links to the page that explains it. |
+| **Stratified sampling** | `_select_chunks` | Passages are taken evenly across the document, not the first six. Chunks are stored in order, so the first six are all the opening pages. |
+| **★ Structured output from an LLM** | `_extract_json` | Asking a model for JSON and getting it back reliably. Models wrap output in code fences often enough that stripping them is cheaper than fighting it in the prompt. |
+| **Defensive parsing** | `_validate` | A malformed question is dropped, never guessed at. Four options, exactly one correct, or it does not become a question. |
+| **★ Deterministic vs model marking** | `grade_multiple_choice` / `grade_short_answer` | Comparing a chosen index to a key is instant, free and exact. A model is used only where there is no key — free text, where a correct idea in different words must still count. |
+| **★ Withholding the answer key** | `QuestionTakingSerializer` | The taking payload omits `correct_index`, `expected_answer` and `explanation`. That JSON reaches the browser, so anything in it is one devtools panel away from the student being tested. |
+| **Graceful failure** | `grade_short_answer` | If the grader is unreachable the answer is reported unmarked, never silently marked wrong. |
+| **Distractor quality** | The generation prompt | Wrong options must be plausible to someone who half-remembers the material — not absurd, not ambiguous. A bad distractor makes a question test reading speed instead of understanding. |
+
+---
+
+## 17. Authorisation design
+
+| Concept | Where | What it means |
+|---|---|---|
+| **★ RBAC** (Role-Based Access Control) | `apps/courses/permissions.py` | Permissions attach to a role, not to individuals. Here the role is per course: you may be a teacher in one and a student in another. |
+| **★ Single source of truth** | `role_in_course` | The rule lives in exactly one function. It was previously written out eight times across six files; one stale copy guarding material it should not is how the original `course_id` hole happened. |
+| **Capability functions** | `can_view_course`, `can_manage_course` | Named for what they permit rather than who they check, so adding a co-teacher or teaching assistant changes one function and nothing else. |
+| **Object vs queryset permissions** | `can_view_course` vs `viewable_courses` | An object check answers "may this user see this row"; a queryset filter answers "which rows may they see". Both must express the same rule, so they live side by side. |
+| **★ Membership vs resource actions** | `IsCourseTeacher.membership_actions` | Leaving a course is a POST, but it changes your own membership, not the course. Treating every POST as an edit is what told students the teacher decides. |
+| **Fail closed** | `get_accessible_course` | The default is refusal; access is granted only by an explicit check that passed. |
+
+---
+
 ## How to prioritise
 
 You cannot learn all of this deeply before your defense. Rank it:
 
 1. **Section 1 in full.** This is your project's contribution. Anything you
    cannot explain here is a real gap.
-2. **The ★ items in sections 2, 3, 4, 7, 8.** The professional-practice
+2. **Sections 16 and 17** — quizzes and authorisation. Both are recent, both
+   contain a decision worth defending (why the AI does *not* mark multiple
+   choice; why the teacher check lives in one place), and both are the kind of
+   thing a marker probes because most projects get them wrong.
+3. **The ★ items in sections 2, 3, 4, 7, 8.** The professional-practice
    questions: how does auth work, how does the frontend stay in sync, why is
    the code split this way.
-3. **Sections 13 and 14.** These separate a student who assembled a project from
+4. **Sections 13 and 14.** These separate a student who assembled a project from
    one who engineered it. "Why did you *not* use Celery" is a design question,
    and having an answer is worth more than the feature.
-4. **The rest** — recognise the terms and know where they appear. You do not
+5. **The rest** — recognise the terms and know where they appear. You do not
    need to lecture on Docker networking.
 
 If you can explain **RAG, embeddings, cosine distance, chunking with overlap,
-why HNSW over IVFFlat, and the IDOR you fixed**, you can hold a defense on this
-project.
+why HNSW over IVFFlat, the IDOR you fixed, and why multiple choice is not marked
+by the AI**, you can hold a defense on this project.

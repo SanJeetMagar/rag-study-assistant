@@ -116,7 +116,7 @@ abstraction is for.
 ## Part 2 — How to study this
 
 You did not write this code, so learn it in the order it *runs*, not the order
-it sits in folders. Six sessions of about two hours. Do them in order.
+it sits in folders. Seven sessions of about two hours. Do them in order.
 
 ### Session 1 — Use it before you read it (2h)
 
@@ -127,8 +127,12 @@ Do not open a single code file.
 3. Upload a real TU syllabus PDF. Watch the badge: Queued → Processing → Ready.
 4. Open an incognito window. Register as a **student**. Join with the code.
 5. Ask ten questions. Five you know are in the PDF, five you know are not.
-6. Write down, on paper: which answers were good, which were wrong, and what
-   the citations said.
+6. Expand **"Answered from N passages"** on a few answers. Read the passages and
+   look at where each distance falls against the 0.7 mark.
+7. As the teacher, press **New quiz** on the document. Wait for the questions,
+   then take it as the student and read the marking.
+8. Write down, on paper: which answers were good, which were wrong, which quiz
+   questions were unfair, and what the citations said.
 
 **You should be able to answer:** What does a teacher do? What does a student
 do? What happens between clicking Upload and the badge saying Ready?
@@ -267,29 +271,82 @@ FROM chat_message ORDER BY created_at DESC LIMIT 4;
 **You should be able to answer:** How does it know which part of the syllabus to
 look at? What stops it inventing answers?
 
-### Session 5 — API and frontend (2h)
+### Session 5 — API, authorisation and the frontend (2h)
 
 Backend, per app: `models.py` → `serializers.py` → `views.py`.
 
 Start with `backend/src/apps/chat/views.py`, function `ask` — it is the whole
-system in forty lines.
+retrieval system in forty lines.
+
+Then read `backend/src/apps/courses/permissions.py` in full. It is short, and it
+is the only place in the project that decides who may do what:
+
+```python
+role_in_course(user, course)     # teacher | student | none
+can_view_course(user, course)    # read the course and its material
+can_manage_course(user, course)  # edit it, upload to it, delete from it
+viewable_courses(user)           # the same rule as a queryset filter
+```
+
+Before that module existed, `course.teacher_id == user.id` was written out in
+eight places across six files. **Be ready to explain why that mattered:** one
+stale copy guarding material it should not is exactly how the original
+`course_id` hole happened, and a co-teacher or teaching-assistant role would
+have meant finding all eight.
 
 Frontend:
 
 1. `frontend/src/services/api.ts` — every network call, plus the 401 refresh
 2. `frontend/src/context/AuthContext.tsx` — who is logged in
-3. `frontend/src/pages/ChatPage.tsx` — the chat screen and citation rendering
+3. `frontend/src/pages/ChatPage.tsx` and `components/Citations.tsx` — the chat
+   screen and how a passage's distance is drawn against the 0.7 cutoff
+4. `frontend/src/index.css` — the seven type classes every page uses
 
 **Understand specifically:** the **401 refresh interceptor** in `api.ts`. Access
 tokens expire after 30 minutes. Without that code a student mid-conversation
 would start getting errors for no visible reason. It refreshes once and replays
-the failed request. Examiners like this question because most student projects
-get it wrong.
+the failed request, and concurrent 401s share that single refresh rather than
+each firing their own. Examiners like this question because most student
+projects get it wrong.
 
-**You should be able to answer:** What happens when a token expires? How does
-the frontend know a document finished processing?
+**You should be able to answer:** What happens when a token expires? Who is
+allowed to delete a document, and where is that decided?
 
-### Session 6 — Defense rehearsal (2h)
+### Session 6 — Quizzes (2h)
+
+Read `backend/src/services/quiz.py`, then `apps/quizzes/models.py` and
+`serializers.py`.
+
+**Understand specifically:**
+
+- **Questions are grounded the same way answers are.** They come from the
+  document's own passages, and every `Question` stores the `source_chunk` it
+  was written from. A quiz testing material the syllabus does not cover is the
+  same failure as an invented answer, only harder to notice.
+- **`_select_chunks` samples across the document** rather than taking the first
+  six. Passages are stored in order, so the first six are all the opening pages
+  — a quiz built from those would only ever test the introduction.
+- **Marking splits by question type on purpose.** Multiple choice is compared
+  against the stored key: deterministic, instant, exact. Asking a language model
+  to compare two integers would be slower, cost money and occasionally disagree
+  with itself. The model is used only where there is no key — short answers,
+  judged against the source passage.
+- **The taking payload omits the answer key.** `QuestionTakingSerializer` has no
+  `correct_index`, `expected_answer` or `explanation`; `QuestionReviewSerializer`
+  has all three. That JSON reaches the browser, so anything in it is one devtools
+  panel away from the student being tested. There is a test asserting the absence.
+
+Run the quiz tests and read them as documentation:
+
+```bash
+cd backend
+../venv/bin/python manage.py test services.tests.test_quizzes -v 2
+```
+
+**You should be able to answer:** How do you know a quiz question is actually
+about this syllabus? Why is the multiple choice not marked by the AI?
+
+### Session 7 — Defense rehearsal (2h)
 
 Out loud. Standing. Timed.
 
@@ -322,7 +379,7 @@ Knowing your limitations is what separates a strong defense from a nervous one.
 
 ```bash
 ./start.sh                                                   # everything comes up
-cd backend && ../venv/bin/python manage.py test services.tests   # 31 pass
+cd backend && ../venv/bin/python manage.py test services.tests   # 57 pass
 ```
 
 - Upload your real syllabus **the night before**, not during the demo
@@ -372,6 +429,9 @@ Bad answer? If the chunk was retrieved but the answer is wrong, it is a
 | **Custom User model from the start** | Swapping the user model is cheap only before the first migration. Doing it later means rebuilding the database. |
 | **Provider abstraction** | Gemini, Anthropic and a mock behind one interface. The mock is why the tests need no network and cost nothing. |
 | **Distance threshold of 0.7** | Without it, an unrelated question still returns its four closest chunks and the model answers from irrelevant text. The threshold is what makes "not covered" possible. |
+| **Authorisation in one module** | The teacher check was written out eight times. One stale copy guarding material it should not is how the original `course_id` hole happened, and adding a co-teacher role would have meant finding all eight. |
+| **Multiple choice marked without AI** | Comparing the chosen index to the key is instant, free and exact. A language model asked to do the same would be slower, cost money and occasionally disagree with itself. It is used only where there is no key. |
+| **Answer key withheld while taking a quiz** | That payload reaches the browser, so anything in it is one devtools panel away from the student being tested. |
 
 ### Three defects in the original plan, and their fixes
 
@@ -387,6 +447,9 @@ it in.
 3. **Retrieval trusted a `course_id` sent by the browser.** Any logged-in student
    could read any course by changing a number. Every course-scoped endpoint now
    checks enrollment.
+4. **Leaving a course was refused as if it were editing one.** Every POST to a
+   course was treated as an edit, so students were told the teacher decides.
+   Leaving changes your own membership, not the course.
 
 Each has a test. Run `manage.py test services.tests` and point at them.
 
@@ -417,6 +480,10 @@ Each has a test. Run `manage.py test services.tests` and point at them.
 | "Gemini is rate limiting this key" | Free-tier per-minute limit | Wait a minute. Pace demo questions. |
 | Logged out unexpectedly | Refresh token expired (7 days) | Log in again |
 | First question is slow | Embedding model loading into memory | Normal. Ask a warm-up question before demoing. |
+| Quiz stuck on "Writing questions…" | Generation failed silently, or the free tier is rate limiting | Press **Retry** on the quiz; check `/tmp/studyai-backend.log` |
+| Quiz says "no indexed passages" | The document is not `ready` yet | Wait for ingestion, then create the quiz |
+| Swagger UI 404s | The docs route was changed or the server predates it | Restart the backend; a test now asserts the route |
+| PDF viewer says you may not be enrolled | Correct — the file endpoint checks enrollment | Join the course, or open one you belong to |
 | `npm run dev` port in use | Vite already running | `./start.sh stop` then start again |
 
 **Reset everything and start clean** (destroys all data):
@@ -439,9 +506,18 @@ cd backend && ../venv/bin/python manage.py migrate
 
 # Tests
 cd backend
-../venv/bin/python manage.py test services.tests               # all 31
+../venv/bin/python manage.py test services.tests               # all 57
 ../venv/bin/python manage.py test services.tests.test_pdf_processor   # fast, no database
+../venv/bin/python manage.py test services.tests.test_quizzes  # quiz generation and marking
 cd frontend && npm run lint                                    # TypeScript check
+
+# API documentation (live, generated from the code)
+#   http://localhost:8001/api/docs/    Swagger UI — sends real requests
+#   http://localhost:8001/api/redoc/   ReDoc — read-only
+cd backend && ../venv/bin/python manage.py spectacular --file schema.yml
+
+# After adding a Python dependency
+cd backend && ../venv/bin/pip freeze > requirements.txt
 
 # Admin
 cd backend

@@ -82,7 +82,7 @@ Session groups a conversation between one student and one course. Message has `r
 
 ## Corrections to the original specification
 
-Three defects in the source spec, fixed in this design.
+Three defects in the source spec, fixed in this design. A fourth, found later in code written for this project, is recorded after them.
 
 **1. Chunking silently drops the end of every document.** The original
 `split_into_chunks` ends each loop with `if len(chunk_words) < 50: break`. With
@@ -226,3 +226,44 @@ extractable text; ingestion detects this and fails the document with a clear
 of changes, `git add` inside those directories silently did nothing, and no source was
 present in repository history. Resolved with `git rm --cached backend frontend` so both
 are tracked as ordinary directories.
+
+---
+
+## Addendum — what changed after this was written
+
+This document records the design as approved. The body above is left as
+written; the list below is what the build actually diverged into, so the two
+can be read together without either being misleading.
+
+**Stale in the body above:** the Django port is now **8001**, not 8000 —
+another project on the machine holds 8000, the same reason Postgres sits on
+5433. The data model is now **seven models**, not five.
+
+**Added since:**
+
+- **`quizzes` app** — `Quiz`, `Question`, `QuizAttempt`, `AttemptAnswer`.
+  Questions are generated from a document's stored passages and each records
+  its `source_chunk`, on the same grounding argument as answers. Multiple
+  choice is marked by comparing against the stored key rather than by the
+  model; the model is used only for short answers, where there is no key.
+  The payload sent while taking a quiz omits the answer key, because it
+  reaches the browser.
+- **Authorisation consolidated** into `apps/courses/permissions.py`. The
+  design assumed one enrollment check would suffice; in practice the rule
+  ended up hand-written in eight places, which is how correction 4 above
+  happened. `role_in_course` is now the only place that decides.
+- **Authenticated file serving** at `/documents/{id}/file/`. `MEDIA_ROOT` is
+  served unauthenticated by Django, so a direct `/media/` link would have
+  bypassed every enrollment check the design specifies.
+- **Passage text stored on citations**, not just chunk ids and distances, so
+  the evidence behind an answer survives the document being re-ingested or
+  deleted — and so the UI can show it.
+- **OpenAPI documentation** via drf-spectacular at `/api/docs/`, generated
+  from the code so it cannot drift out of date.
+- **A frontend type scale** in `index.css`, and shared `PageHeader` /
+  `EmptyState` / `ErrorBanner` / `StatusBadge` components. Not a design
+  decision so much as the correction of an omission: the design said nothing
+  about visual consistency, and eight ad-hoc text sizes accumulated.
+
+**Still not done, and still the highest-value work:** retrieval accuracy is
+demonstrated but not measured. See `docs/IMPROVEMENTS.md`.
