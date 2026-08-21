@@ -150,6 +150,33 @@ class EnrollmentSecurityTests(ApiTestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class ApiDocsTests(ApiTestCase):
+    """
+    The docs routes were once silently broken by an unrelated edit that blanked
+    a path string: the URL name still resolved, just to '/'. Nothing failed,
+    because nothing checked. These assert the addresses, not merely that the
+    views exist.
+    """
+
+    def test_documentation_routes_are_where_they_claim_to_be(self):
+        from django.urls import reverse
+
+        self.assertEqual(reverse('swagger-ui'), '/api/docs/')
+        self.assertEqual(reverse('schema'), '/api/schema/')
+        self.assertEqual(reverse('redoc'), '/api/redoc/')
+
+    def test_swagger_ui_renders(self):
+        response = self.client.get('/api/docs/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_schema_lists_the_main_endpoints(self):
+        response = self.client.get('/api/schema/')
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        for path in ('/api/chat/ask/', '/api/documents/', '/api/courses/'):
+            self.assertIn(path, body)
+
+
 class ChatTests(ApiTestCase):
     """Retrieval runs against real embeddings in the real pgvector column."""
 
