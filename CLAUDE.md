@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A RAG study assistant: teachers upload syllabus PDFs, students ask questions, answers come only from the uploaded material with citations. BICTE capstone, runs locally — no deployment target.
 
-See [NOTE.md](NOTE.md) for a one-page summary, [README.md](README.md) for setup, [docs/STUDY-GUIDE.md](docs/STUDY-GUIDE.md) for the study plan and config reference, [docs/CONCEPTS.md](docs/CONCEPTS.md) for every concept used, and [docs/superpowers/specs/](docs/superpowers/specs/) for the design rationale.
+See [NOTE.md](NOTE.md) for a one-page summary, [README.md](README.md) for setup, [docs/STUDY-GUIDE.md](docs/STUDY-GUIDE.md) for the study plan and config reference, [docs/CONCEPTS.md](docs/CONCEPTS.md) for every concept used, [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for the ranked improvement roadmap, and [docs/superpowers/specs/](docs/superpowers/specs/) for the design rationale.
 
 ## Commands
 
