@@ -28,7 +28,7 @@ cd backend
 ../venv/bin/python manage.py requeue_stuck_documents                      # clear stranded ingestions
 ```
 
-The venv is at the repo root (`./venv`), not inside `backend/`. There is still no `requirements.txt` — add one if you add dependencies.
+The venv is at the repo root (`./venv`), not inside `backend/`. Dependencies are pinned in `backend/requirements.txt` — regenerate with `../venv/bin/pip freeze > requirements.txt` after adding any.
 
 ### Frontend
 
