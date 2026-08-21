@@ -44,6 +44,8 @@ class Course(models.Model):
 
     def is_accessible_by(self, user):
         """Teacher who owns it, or a student enrolled in it."""
-        if self.teacher_id == user.id:
-            return True
-        return self.students.filter(pk=user.pk).exists()
+        # Imported here rather than at module level: permissions imports this
+        # model, so a top-level import would be circular.
+        from .permissions import can_view_course
+
+        return can_view_course(user, self)

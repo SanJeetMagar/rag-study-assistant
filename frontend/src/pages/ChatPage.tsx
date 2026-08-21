@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import {Plus, Send, Sparkles} from "lucide-react";
 import {Button} from "../components/Button";
 import {Citations} from "../components/Citations";
+import {ErrorBanner} from "../components/ErrorBanner";
 import {chat, courses, errorMessage} from "../services/api";
 import type {Message} from "../types";
 
@@ -109,7 +110,7 @@ export const ChatPage: React.FC = () => {
             <button
               key={session.id}
               onClick={() => setSessionId(session.id)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm truncate transition-colors ${
+              className={`w-full text-left px-3 py-2 rounded-lg t-body truncate transition-colors ${
                 sessionId === session.id
                   ? "bg-amber-100 text-amber-900 font-medium"
                   : "text-slate-600 hover:bg-amber-50"
@@ -123,10 +124,10 @@ export const ChatPage: React.FC = () => {
 
       <section className="flex-1 flex flex-col min-w-0">
         <header className="pb-3 border-b border-amber-200">
-          <h1 className="font-display text-xl text-slate-900">
+          <h1 className="t-title">
             {course?.title ?? "Study assistant"}
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="t-meta">
             Answers come only from this course's uploaded syllabus.
           </p>
         </header>
@@ -135,8 +136,8 @@ export const ChatPage: React.FC = () => {
           {messages.length === 0 && !ask.isPending && (
             <div className="text-center py-16">
               <Sparkles size={28} className="mx-auto text-amber-400 mb-3" />
-              <p className="font-medium text-slate-900">Ask about your syllabus</p>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="t-subtitle">Ask about your syllabus</p>
+              <p className="t-body text-slate-500 mt-1">
                 Try "Explain the OSI model" or "What is covered in Unit 3?"
               </p>
             </div>
@@ -148,7 +149,7 @@ export const ChatPage: React.FC = () => {
 
           {ask.isPending && (
             <div className="flex justify-start">
-              <div className="bg-white border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-2 text-slate-500 text-sm">
+              <div className="bg-white border border-amber-200 rounded-2xl px-4 py-3 flex items-center gap-2 t-body text-slate-500">
                 <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-bounce" />
                 <span
                   className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-bounce"
@@ -164,14 +165,7 @@ export const ChatPage: React.FC = () => {
           )}
         </div>
 
-        {error && (
-          <p
-            role="alert"
-            className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2"
-          >
-            {error}
-          </p>
-        )}
+        <ErrorBanner message={error} className="mb-2" />
 
         <div className="flex gap-2 pt-3 border-t border-amber-200">
           <input

@@ -25,3 +25,43 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ---------------------------------------------------------------- type scale
+
+   Eight Tailwind text sizes were in use with no system: `text-lg` alone
+   appeared eleven times for headings, labels and body copy alike. These are
+   the only sizes the app uses now, named for their role rather than their
+   size, so hierarchy stays consistent when pages change.
+
+   display > title > subtitle > body > meta > micro
+*/
+@layer components {
+  /* Page title. One per screen. */
+  .t-display {
+    @apply font-display text-3xl leading-tight tracking-tight text-slate-900;
+  }
+  /* Section or dialog heading. */
+  .t-title {
+    @apply font-display text-xl leading-snug text-slate-900;
+  }
+  /* Card heading, list item name. Sans, so it reads as UI not prose. */
+  .t-subtitle {
+    @apply font-sans text-base font-medium leading-snug text-slate-900;
+  }
+  /* Default reading size. */
+  .t-body {
+    @apply font-sans text-sm leading-relaxed text-slate-700;
+  }
+  /* Supporting detail, timestamps, counts. */
+  .t-meta {
+    @apply font-sans text-xs leading-normal text-slate-500;
+  }
+  /* Badges and eyebrow labels. */
+  .t-micro {
+    @apply font-sans text-[11px] font-medium uppercase tracking-wide text-slate-400;
+  }
+  /* Numbers that should line up in a column. */
+  .t-numeric {
+    @apply font-mono text-xs tabular-nums text-slate-500;
+  }
+}

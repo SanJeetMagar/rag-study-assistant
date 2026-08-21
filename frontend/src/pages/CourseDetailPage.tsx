@@ -2,13 +2,9 @@ import React, {useRef, useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {Link, useNavigate, useParams} from "react-router-dom";
 import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
   Copy,
   Eye,
   FileText,
-  Loader2,
   LogOut,
   MessageSquare,
   Pencil,
@@ -19,36 +15,14 @@ import {
 } from "lucide-react";
 import {Button} from "../components/Button";
 import {ConfirmDialog} from "../components/ConfirmDialog";
+import {EmptyState} from "../components/EmptyState";
+import {ErrorBanner} from "../components/ErrorBanner";
 import {Input} from "../components/Input";
 import {Modal} from "../components/Modal";
+import {PageHeader} from "../components/PageHeader";
+import {StatusBadge} from "../components/StatusBadge";
 import {courses, documents, errorMessage} from "../services/api";
-import type {DocumentStatus, StudyDocument} from "../types";
-
-const STATUS: Record<
-  DocumentStatus,
-  {label: string; className: string; icon: React.ReactNode}
-> = {
-  pending: {
-    label: "Queued",
-    className: "bg-zinc-100 text-zinc-600",
-    icon: <Clock size={13} />,
-  },
-  processing: {
-    label: "Reading it",
-    className: "bg-amber-100 text-amber-800",
-    icon: <Loader2 size={13} className="animate-spin" />,
-  },
-  ready: {
-    label: "Ready",
-    className: "bg-emerald-100 text-emerald-800",
-    icon: <CheckCircle2 size={13} />,
-  },
-  error: {
-    label: "Failed",
-    className: "bg-red-100 text-red-700",
-    icon: <AlertCircle size={13} />,
-  },
-};
+import type {StudyDocument} from "../types";
 
 export const CourseDetailPage: React.FC = () => {
   const {courseId} = useParams();
@@ -168,82 +142,80 @@ export const CourseDetailPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="font-display text-3xl text-slate-900">
-            {course?.title ?? "Course"}
-          </h1>
-          {course?.description && (
-            <p className="text-slate-600 mt-1 max-w-prose">{course.description}</p>
-          )}
-          <p className="text-sm text-slate-500 mt-2">
-            {readyCount === 0
-              ? "Nothing to answer from yet."
-              : `${readyCount} document${readyCount === 1 ? "" : "s"} ready — ` +
-                `${totalPassages} searchable passages.`}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Link to={`/courses/${id}/chat`}>
-            <Button variant="secondary" disabled={readyCount === 0}>
-              <MessageSquare size={16} className="mr-1.5" />
-              Ask a question
-            </Button>
-          </Link>
-
-          {isTeacher ? (
-            <>
-              <input
-                ref={fileInput}
-                type="file"
-                accept="application/pdf,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) upload.mutate(file);
-                  e.target.value = "";
-                }}
-              />
-              <Button
-                onClick={() => fileInput.current?.click()}
-                isLoading={upload.isPending}
-              >
-                <Upload size={16} className="mr-1.5" />
-                Upload PDF
+      <PageHeader
+        title={course?.title ?? "Course"}
+        description={
+          <>
+            {course?.description && <span className="block">{course.description}</span>}
+            <span className="block t-meta mt-1">
+              {readyCount === 0
+                ? "Nothing to answer from yet."
+                : `${readyCount} document${readyCount === 1 ? "" : "s"} ready — ${totalPassages} searchable passages.`}
+            </span>
+          </>
+        }
+        actions={
+          <>
+            <Link to={`/courses/${id}/chat`}>
+              <Button variant="secondary" disabled={readyCount === 0}>
+                <MessageSquare size={16} className="mr-1.5" />
+                Ask a question
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setDraft({
-                    title: course?.title ?? "",
-                    description: course?.description ?? "",
-                  });
-                  setEditing(true);
-                }}
-                aria-label="Course settings"
-              >
-                <Settings2 size={16} />
+            </Link>
+
+            {isTeacher ? (
+              <>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) upload.mutate(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  onClick={() => fileInput.current?.click()}
+                  isLoading={upload.isPending}
+                >
+                  <Upload size={16} className="mr-1.5" />
+                  Upload PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDraft({
+                      title: course?.title ?? "",
+                      description: course?.description ?? "",
+                    });
+                    setEditing(true);
+                  }}
+                  aria-label="Course settings"
+                >
+                  <Settings2 size={16} />
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" onClick={() => setLeaving(true)}>
+                <LogOut size={16} className="mr-1.5" />
+                Leave
               </Button>
-            </>
-          ) : (
-            <Button variant="outline" onClick={() => setLeaving(true)}>
-              <LogOut size={16} className="mr-1.5" />
-              Leave
-            </Button>
-          )}
-        </div>
-      </header>
+            )}
+          </>
+        }
+      />
 
       {isTeacher && course && (
-        <div className="flex items-center gap-2 text-sm bg-white border border-amber-200 rounded-xl px-4 py-3">
-          <span className="text-slate-500">Students join with</span>
+        <div className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-4 py-3">
+          <span className="t-body text-slate-500">Students join with</span>
           <code className="font-mono font-semibold tracking-widest text-rose-700">
             {course.course_code}
           </code>
           <button
             onClick={copyCode}
-            className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 t-meta hover:text-slate-800 transition-colors"
           >
             <Copy size={13} />
             {copied ? "Copied" : "Copy"}
@@ -251,31 +223,23 @@ export const CourseDetailPage: React.FC = () => {
         </div>
       )}
 
-      {error && (
-        <p
-          role="alert"
-          className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
-        >
-          {error}
-        </p>
-      )}
+      <ErrorBanner message={error} />
 
       {isLoading ? (
-        <p className="text-slate-500">Loading documents…</p>
+        <p className="t-body text-slate-500">Loading documents…</p>
       ) : docs.length === 0 ? (
-        <div className="text-center border border-dashed border-amber-300 rounded-2xl py-16 px-6 bg-white/60">
-          <FileText size={32} className="mx-auto text-amber-400 mb-3" />
-          <p className="font-medium text-slate-900">No syllabus here yet</p>
-          <p className="text-slate-500 text-sm mt-1 max-w-sm mx-auto">
-            {isTeacher
+        <EmptyState
+          icon={FileText}
+          title="No syllabus here yet"
+          body={
+            isTeacher
               ? "Upload a text-based PDF. It gets split into passages and indexed so students can ask about it."
-              : "Your teacher hasn't uploaded the syllabus yet. Check back later."}
-          </p>
-        </div>
+              : "Your teacher hasn't uploaded the syllabus yet. Check back later."
+          }
+        />
       ) : (
         <ul className="space-y-3">
           {docs.map((doc) => {
-            const badge = STATUS[doc.status];
             return (
               <li
                 key={doc.id}
@@ -285,18 +249,13 @@ export const CourseDetailPage: React.FC = () => {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-medium text-slate-900 truncate">
+                    <span className="t-subtitle truncate">
                       {doc.title}
                     </span>
-                    <span
-                      className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md ${badge.className}`}
-                    >
-                      {badge.icon}
-                      {badge.label}
-                    </span>
+                    <StatusBadge status={doc.status} />
                   </div>
 
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="t-meta mt-1">
                     {doc.status === "ready"
                       ? `${doc.total_chunks} passages · uploaded by ${doc.uploaded_by_email}`
                       : doc.status === "error"
@@ -376,7 +335,7 @@ export const CourseDetailPage: React.FC = () => {
               setEditing(false);
               setDeletingCourse(true);
             }}
-            className="w-full text-sm text-red-600 hover:underline"
+            className="w-full t-body text-red-600 hover:underline"
           >
             Delete this course
           </button>
@@ -395,7 +354,7 @@ export const CourseDetailPage: React.FC = () => {
             onChange={(e) => setRenameTo(e.target.value)}
             autoFocus
           />
-          <p className="text-xs text-slate-500">
+          <p className="t-meta">
             Only the label changes. The passages already indexed stay as they are.
           </p>
           <Button

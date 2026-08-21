@@ -1,11 +1,15 @@
 from django.http import FileResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
-from apps.courses.permissions import get_accessible_course
+from apps.courses.permissions import (
+    get_accessible_course,
+    require_course_manager,
+    viewable_courses,
+)
 from services.ingestion import process_document_async
 
 from .models import Document
@@ -27,17 +31,18 @@ class DocumentViewSet(viewsets.ModelViewSet):
         Documents from courses the user teaches or is enrolled in.
 
         Filtering by enrollment here is what stops a student reading another
-        course's material by guessing a document id.
+        course's material by guessing a document id -- including the PDF
+        itself, since the file endpoint resolves through this queryset.
         """
-        from django.db.models import Q
-
         user = self.request.user
         queryset = Document.objects.filter(
-            Q(course__teacher=user) | Q(course__students=user)
-        ).distinct().select_related('course', 'uploaded_by')
+            course__in=viewable_courses(user)
+        ).select_related('course', 'uploaded_by')
 
         course_id = self.request.query_params.get('course_id')
         if course_id:
+            # Raises 403 rather than silently returning nothing, so a student
+            # poking at another course's id learns they were refused.
             get_accessible_course(user, course_id)
             queryset = queryset.filter(course_id=course_id)
         return queryset
@@ -48,13 +53,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
         process_document_async(document)
 
     def perform_update(self, serializer):
-        if serializer.instance.course.teacher_id != self.request.user.id:
-            raise PermissionDenied('Only the course teacher can rename documents.')
+        require_course_manager(
+            self.request.user, serializer.instance.course, 'rename documents'
+        )
         serializer.save()
 
     def perform_destroy(self, instance):
-        if instance.course.teacher_id != self.request.user.id:
-            raise PermissionDenied('Only the course teacher can delete documents.')
+        require_course_manager(self.request.user, instance.course, 'delete documents')
         instance.delete()  # chunks cascade
 
     @action(detail=True, methods=['get'])
@@ -90,8 +95,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
     def reprocess(self, request, pk=None):
         """Re-run ingestion — useful after a transient failure."""
         document = self.get_object()
-        if document.course.teacher_id != request.user.id:
-            raise PermissionDenied('Only the course teacher can reprocess documents.')
+        require_course_manager(request.user, document.course, 'reprocess documents')
         if document.status == Document.Status.PROCESSING:
             return Response(
                 {'detail': 'This document is already being processed.'},

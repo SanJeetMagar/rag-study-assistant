@@ -56,11 +56,11 @@ export const DocumentViewerPage: React.FC = () => {
             <ArrowLeft size={18} />
           </Link>
           <div className="min-w-0">
-            <h1 className="font-display text-xl text-slate-900 truncate">
+            <h1 className="t-title truncate">
               Source document
             </h1>
             {page && (
-              <p className="text-xs text-slate-500">Opened at page {page}</p>
+              <p className="t-meta">Opened at page {page}</p>
             )}
           </div>
         </div>
@@ -79,15 +79,15 @@ export const DocumentViewerPage: React.FC = () => {
         <div className="flex-1 grid place-items-center">
           <div className="text-center max-w-sm">
             <FileWarning size={30} className="mx-auto text-amber-400 mb-3" />
-            <p className="font-medium text-slate-900">{error}</p>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="t-subtitle">{error}</p>
+            <p className="t-body text-slate-500 mt-1">
               You may not be enrolled in this course, or the file has been removed
               from storage.
             </p>
           </div>
         </div>
       ) : !objectUrl ? (
-        <div className="flex-1 grid place-items-center text-slate-500 text-sm">
+        <div className="flex-1 grid place-items-center t-body text-slate-500">
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
             Loading document…

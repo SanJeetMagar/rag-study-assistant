@@ -28,7 +28,7 @@ export const LandingPage: React.FC = () => (
         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-rose-600 text-amber-50">
           <BookOpen size={17} />
         </span>
-        <span className="font-display text-lg text-slate-900">Study Assistant</span>
+        <span className="t-title">Study Assistant</span>
       </span>
       <div className="flex gap-2">
         <Link to="/login">
@@ -41,6 +41,9 @@ export const LandingPage: React.FC = () => (
     </header>
 
     <main className="max-w-5xl mx-auto px-6">
+      {/* The hero deliberately sits outside the app type scale in index.css:
+          a marketing headline wants more presence than any in-app heading,
+          and it appears exactly once. Everything below returns to the scale. */}
       <section className="py-16 sm:py-24 text-center">
         <h1 className="font-display text-4xl sm:text-6xl text-slate-900 leading-tight">
           Ask your syllabus
@@ -67,8 +70,8 @@ export const LandingPage: React.FC = () => (
         {FEATURES.map(({icon: Icon, title, body}) => (
           <div key={title} className="bg-white border border-amber-200 rounded-2xl p-5">
             <Icon size={22} className="text-rose-600 mb-3" />
-            <h2 className="font-display text-lg text-slate-900">{title}</h2>
-            <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">{body}</p>
+            <h2 className="t-title">{title}</h2>
+            <p className="t-body mt-1.5">{body}</p>
           </div>
         ))}
       </section>

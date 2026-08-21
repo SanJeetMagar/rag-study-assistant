@@ -34,7 +34,7 @@ const Passage: React.FC<{citation: Citation; index: number}> = ({citation, index
         className="w-full text-left px-3 py-2 hover:bg-amber-50 transition-colors"
       >
         <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-[11px] font-mono text-slate-400">#{index + 1}</span>
+          <span className="t-numeric text-slate-400">#{index + 1}</span>
           <FileText size={12} className="text-rose-500 shrink-0 self-center" />
           <span className="text-xs font-medium text-slate-700">
             {citation.document_title}
@@ -68,7 +68,7 @@ const Passage: React.FC<{citation: Citation; index: number}> = ({citation, index
               title={`cutoff ${THRESHOLD}`}
             />
           </div>
-          <span className="text-[11px] font-mono text-slate-500 tabular-nums">
+          <span className="t-numeric">
             {citation.distance.toFixed(3)}
           </span>
         </div>
@@ -103,7 +103,7 @@ export const Citations: React.FC<{citations: Citation[]; declined: boolean}> = (
       <button
         onClick={() => setShowAll(!showAll)}
         aria-expanded={showAll}
-        className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-400 hover:text-slate-600 transition-colors"
+        className="flex items-center gap-1.5 t-micro hover:text-slate-600 transition-colors"
       >
         {/* Calling these "answered from" beneath a refusal would claim the
             passages answered the question when they did not. */}
@@ -123,7 +123,7 @@ export const Citations: React.FC<{citations: Citation[]; declined: boolean}> = (
               <Passage key={citation.chunk_id} citation={citation} index={i} />
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-slate-400 leading-relaxed">
+          <p className="mt-2 t-meta text-slate-400">
             Distance is how far the passage sits from your question in meaning —
             0 is identical, 1 unrelated. The mark at {THRESHOLD} is the cutoff;
             anything beyond it is discarded rather than answered from.

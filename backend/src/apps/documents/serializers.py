@@ -1,7 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers
 
-from apps.courses.models import Course
+from apps.courses.permissions import can_manage_course
 
 from .models import Document, DocumentChunk
 
@@ -37,7 +37,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def validate_course(self, value):
         user = self.context['request'].user
-        if value.teacher_id != user.id:
+        if not can_manage_course(user, value):
             raise serializers.ValidationError(
                 'Only the teacher who owns this course can upload documents to it.'
             )

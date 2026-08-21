@@ -1,10 +1,14 @@
-from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Course
-from .permissions import IsCourseTeacher
+from .permissions import (
+    CourseRole,
+    IsCourseTeacher,
+    role_in_course,
+    viewable_courses,
+)
 from .serializers import CourseSerializer, JoinCourseSerializer
 
 
@@ -18,12 +22,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Courses the user teaches, plus those they're enrolled in."""
-        user = self.request.user
-        return (
-            Course.objects.filter(Q(teacher=user) | Q(students=user))
-            .distinct()
-            .select_related('teacher')
-        )
+        return viewable_courses(self.request.user).select_related('teacher')
 
     def perform_create(self, serializer):
         serializer.save(teacher=self.request.user)
@@ -35,7 +34,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         course = serializer.course
 
-        if course.teacher_id == request.user.id:
+        if role_in_course(request.user, course) == CourseRole.TEACHER:
             return Response(
                 {'detail': 'You teach this course — you already have access.'},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -55,7 +54,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def leave(self, request, pk=None):
         course = self.get_object()
-        if course.teacher_id == request.user.id:
+        if role_in_course(request.user, course) == CourseRole.TEACHER:
             return Response(
                 {'detail': 'A teacher cannot leave their own course.'},
                 status=status.HTTP_400_BAD_REQUEST,

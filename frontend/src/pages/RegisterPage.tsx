@@ -2,6 +2,7 @@ import React, {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {BookOpen, GraduationCap, Presentation} from "lucide-react";
 import {Button} from "../components/Button";
+import {ErrorBanner} from "../components/ErrorBanner";
 import {Input} from "../components/Input";
 import {useAuth} from "../context/AuthContext";
 import {errorMessage} from "../services/api";
@@ -55,7 +56,7 @@ export const RegisterPage: React.FC = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-rose-600 text-amber-50 mb-4">
             <BookOpen size={24} />
           </div>
-          <h1 className="font-display text-3xl text-slate-900">Create your account</h1>
+          <h1 className="t-display">Create your account</h1>
         </div>
 
         <form
@@ -63,7 +64,7 @@ export const RegisterPage: React.FC = () => {
           className="bg-white border border-amber-200 rounded-2xl p-6 shadow-sm space-y-4"
         >
           <div>
-            <span className="block text-sm font-medium text-amber-900 mb-2">I am a</span>
+            <span className="block t-body font-medium text-amber-900 mb-2">I am a</span>
             <div className="grid grid-cols-2 gap-3">
               {ROLES.map((option) => (
                 <button
@@ -81,7 +82,7 @@ export const RegisterPage: React.FC = () => {
                     {option.icon}
                     {option.label}
                   </span>
-                  <span className="block text-xs text-slate-500 mt-1">{option.blurb}</span>
+                  <span className="block t-meta mt-1">{option.blurb}</span>
                 </button>
               ))}
             </div>
@@ -109,20 +110,13 @@ export const RegisterPage: React.FC = () => {
             required
           />
 
-          {error && (
-            <p
-              role="alert"
-              className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
-            >
-              {error}
-            </p>
-          )}
+          <ErrorBanner message={error} />
 
           <Button type="submit" isLoading={busy} className="w-full" size="lg">
             Create account
           </Button>
 
-          <p className="text-sm text-center text-slate-500">
+          <p className="t-body text-center text-slate-500">
             Already registered?{" "}
             <Link to="/login" className="text-rose-600 font-medium hover:underline">
               Sign in

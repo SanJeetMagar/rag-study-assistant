@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.users.serializers import UserSerializer
 
 from .models import Course
+from .permissions import role_in_course
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -29,8 +30,7 @@ class CourseSerializer(serializers.ModelSerializer):
         return obj.documents.count()
 
     def get_my_role(self, obj) -> str:
-        user = self.context['request'].user
-        return 'teacher' if obj.teacher_id == user.id else 'student'
+        return role_in_course(self.context['request'].user, obj)
 
 
 class JoinCourseSerializer(serializers.Serializer):
