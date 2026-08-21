@@ -127,6 +127,21 @@ class EnrollmentSecurityTests(ApiTestCase):
         response = self.client.get(f'/api/documents/?course_id={self.private.id}')
         self.assertEqual(response.status_code, 403)
 
+    def test_downloading_a_pdf_from_an_unenrolled_course_is_blocked(self):
+        """
+        Django serves MEDIA_ROOT unprotected, so the file endpoint is the only
+        thing standing between a guessed id and another course's material.
+        """
+        document = Document.objects.create(
+            course=self.private, title='Private notes',
+            file='documents/private.pdf', uploaded_by=self.teacher,
+            status=Document.Status.READY,
+        )
+        self.auth(self.outsider)
+        response = self.client.get(f'/api/documents/{document.id}/file/')
+        # Filtered out of the queryset entirely, so it does not even exist.
+        self.assertEqual(response.status_code, 404)
+
     def test_a_missing_course_reports_not_found(self):
         self.auth(self.student)
         response = self.client.post('/api/chat/ask/', {
@@ -188,6 +203,22 @@ class ChatTests(ApiTestCase):
         self.assertEqual(citation['document_title'], 'Unit 3 - Network Layer')
         self.assertIn('distance', citation)
         self.assertIn('chunk_id', citation)
+
+    def test_citations_store_the_passage_text_not_just_a_reference(self):
+        """
+        The UI shows the passages behind an answer, and the evidence should
+        survive the document being re-ingested or deleted -- so the text is
+        stored with the message rather than looked up by id later.
+        """
+        self.auth(self.student)
+        response = self.client.post('/api/chat/ask/', {
+            'question': 'Explain the OSI model layers',
+            'course_id': self.course.id,
+        }, format='json')
+
+        citation = response.data['citations'][0]
+        self.assertIn('OSI model', citation['content'])
+        self.assertEqual(citation['document_id'], self.document.id)
 
     def test_off_syllabus_question_declines_instead_of_inventing(self):
         self.auth(self.student)
@@ -260,6 +291,41 @@ class DocumentTests(ApiTestCase):
         }, format='multipart')
 
         self.assertEqual(response.status_code, 400)
+
+    def test_teacher_can_rename_a_document(self):
+        document = Document.objects.create(
+            course=self.course, title='Unit 1', file='documents/u1.pdf',
+            uploaded_by=self.teacher, status=Document.Status.READY,
+        )
+        self.auth(self.teacher)
+        response = self.client.patch(
+            f'/api/documents/{document.id}/', {'title': 'Unit 1 - Revised'},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 200)
+        document.refresh_from_db()
+        self.assertEqual(document.title, 'Unit 1 - Revised')
+
+    def test_student_cannot_rename_a_document(self):
+        document = Document.objects.create(
+            course=self.course, title='Unit 1', file='documents/u1.pdf',
+            uploaded_by=self.teacher, status=Document.Status.READY,
+        )
+        self.auth(self.student)
+        response = self.client.patch(
+            f'/api/documents/{document.id}/', {'title': 'Hacked'},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_upload_without_a_file_is_rejected(self):
+        self.auth(self.teacher)
+        response = self.client.post(
+            '/api/documents/', {'course': self.course.id, 'title': 'No file'},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('file', response.data)
 
     def test_status_endpoint_reports_progress(self):
         document = Document.objects.create(

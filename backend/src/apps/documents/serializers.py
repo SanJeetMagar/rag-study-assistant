@@ -8,6 +8,8 @@ from .models import Document, DocumentChunk
 
 class DocumentSerializer(serializers.ModelSerializer):
     uploaded_by_email = serializers.EmailField(source='uploaded_by.email', read_only=True)
+    # Required on create, absent on a rename -- PATCH sends only the title.
+    file = serializers.FileField(required=False)
 
     class Meta:
         model = Document
@@ -40,6 +42,16 @@ class DocumentSerializer(serializers.ModelSerializer):
                 'Only the teacher who owns this course can upload documents to it.'
             )
         return value
+
+    def validate(self, attrs):
+        """
+        `file` is optional at field level so a rename can PATCH just the title.
+        On create it is still mandatory -- a document row with no file would
+        fail ingestion with a confusing error instead of a clear one here.
+        """
+        if self.instance is None and not attrs.get('file'):
+            raise serializers.ValidationError({'file': 'A PDF file is required.'})
+        return attrs
 
 
 class DocumentStatusSerializer(serializers.ModelSerializer):

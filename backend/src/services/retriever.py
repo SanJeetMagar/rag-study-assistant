@@ -77,12 +77,18 @@ def generate_answer(question, course_id, history=()):
         history=[Turn(role=t.role, content=t.content) for t in history],
     )
 
+    # The chunk text is stored alongside the reference, not just its id, so an
+    # answer keeps the exact evidence it was based on even if the document is
+    # later re-ingested or deleted. It is also what lets the UI show the
+    # passages behind an answer rather than only citing them.
     citations = [
         {
             'chunk_id': chunk.id,
+            'document_id': chunk.document_id,
             'document_title': chunk.document.title,
             'page_number': chunk.page_number,
             'distance': round(float(chunk.distance), 4),
+            'content': chunk.content,
         }
         for chunk in chunks
     ]

@@ -2,53 +2,14 @@ import React, {useEffect, useRef, useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useParams} from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-import {FileText, Plus, Send, Sparkles} from "lucide-react";
+import {Plus, Send, Sparkles} from "lucide-react";
 import {Button} from "../components/Button";
+import {Citations} from "../components/Citations";
 import {chat, courses, errorMessage} from "../services/api";
-import type {Citation, Message} from "../types";
+import type {Message} from "../types";
 
-/** Cosine distance -> a label a student (and a defense committee) can read. */
-function matchQuality(distance: number) {
-  if (distance < 0.35) return {label: "strong match", className: "text-emerald-700"};
-  if (distance < 0.55) return {label: "good match", className: "text-amber-700"};
-  return {label: "weak match", className: "text-zinc-500"};
-}
-
+/** Matches the exact refusal sentence in the backend system prompt. */
 const NOT_COVERED = "not covered in your uploaded syllabus";
-
-const Citations: React.FC<{citations: Citation[]; declined: boolean}> = ({
-  citations,
-  declined,
-}) => {
-  if (citations.length === 0) return null;
-  return (
-    <div className="mt-3 pt-3 border-t border-amber-200/70">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 mb-1.5">
-        {/* Labelling these "Answered from" under a refusal claims the passages
-            answered the question when they did not. */}
-        {declined ? "Closest passages searched — none answered this" : "Answered from"}
-      </p>
-      <ul className="space-y-1">
-        {citations.map((citation) => {
-          const quality = matchQuality(citation.distance);
-          return (
-            <li
-              key={citation.chunk_id}
-              className="flex flex-wrap items-center gap-x-2 text-xs text-slate-600"
-            >
-              <FileText size={12} className="text-rose-500 shrink-0" />
-              <span className="font-medium">{citation.document_title}</span>
-              {citation.page_number && <span>page {citation.page_number}</span>}
-              <span className={quality.className}>
-                {quality.label} (distance {citation.distance.toFixed(3)})
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-};
 
 const Bubble: React.FC<{message: Message}> = ({message}) => {
   const isAssistant = message.role === "assistant";

@@ -39,10 +39,17 @@ export interface StudyDocument {
 /** Where an answer came from — rendered under assistant messages. */
 export interface Citation {
   chunk_id: number;
+  document_id: number;
   document_title: string;
   page_number: number | null;
   /** Cosine distance: 0 is identical meaning, 1 is unrelated. */
   distance: number;
+  /**
+   * The passage itself, stored with the answer rather than looked up later,
+   * so the evidence survives the document being re-ingested or removed.
+   * Older messages predate this field.
+   */
+  content?: string;
 }
 
 export interface Message {

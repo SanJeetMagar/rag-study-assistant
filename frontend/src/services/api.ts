@@ -153,6 +153,13 @@ export const courses = {
     const {data} = await api.post<Course>("/courses/", payload);
     return data;
   },
+  async update(id: number, payload: {title?: string; description?: string}) {
+    const {data} = await api.patch<Course>(`/courses/${id}/`, payload);
+    return data;
+  },
+  async leave(id: number) {
+    await api.post(`/courses/${id}/leave/`);
+  },
   async join(courseCode: string) {
     const {data} = await api.post<Course>("/courses/join/", {course_code: courseCode});
     return data;
@@ -185,8 +192,25 @@ export const documents = {
     const {data} = await api.post<StudyDocument>(`/documents/${id}/reprocess/`);
     return data;
   },
+  async rename(id: number, title: string) {
+    const {data} = await api.patch<StudyDocument>(`/documents/${id}/`, {title});
+    return data;
+  },
   async remove(id: number) {
     await api.delete(`/documents/${id}/`);
+  },
+  /**
+   * Fetch the PDF as an object URL for the viewer.
+   *
+   * The file is behind an authenticated endpoint, and an <iframe> cannot send
+   * an Authorization header -- so fetch it here, where the interceptor adds
+   * the token, and hand the iframe a blob URL instead. Revoke it when done.
+   */
+  async fileUrl(id: number) {
+    const {data} = await api.get(`/documents/${id}/file/`, {
+      responseType: "blob",
+    });
+    return URL.createObjectURL(data as Blob);
   },
 };
 

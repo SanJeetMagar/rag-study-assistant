@@ -1,6 +1,7 @@
+from django.http import FileResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -46,6 +47,11 @@ class DocumentViewSet(viewsets.ModelViewSet):
         document = serializer.save(uploaded_by=self.request.user)
         process_document_async(document)
 
+    def perform_update(self, serializer):
+        if serializer.instance.course.teacher_id != self.request.user.id:
+            raise PermissionDenied('Only the course teacher can rename documents.')
+        serializer.save()
+
     def perform_destroy(self, instance):
         if instance.course.teacher_id != self.request.user.id:
             raise PermissionDenied('Only the course teacher can delete documents.')
@@ -55,6 +61,30 @@ class DocumentViewSet(viewsets.ModelViewSet):
     def status(self, request, pk=None):
         """Cheap endpoint the frontend polls while ingestion runs."""
         return Response(DocumentStatusSerializer(self.get_object()).data)
+
+    @action(detail=True, methods=['get'])
+    def file(self, request, pk=None):
+        """
+        Serve the PDF itself, enrollment checked.
+
+        Django serves MEDIA_ROOT unprotected in development, so linking
+        straight to /media/ would let anyone holding a URL read any course's
+        material -- the same hole that was closed for retrieval. Going through
+        the viewset means get_queryset() applies and a non-member gets a 404
+        rather than the file.
+        """
+        document = self.get_object()
+        try:
+            handle = document.file.open('rb')
+        except FileNotFoundError:
+            raise NotFound('The file is missing from storage.')
+
+        response = FileResponse(handle, content_type='application/pdf')
+        # inline so the browser renders it instead of downloading.
+        response['Content-Disposition'] = (
+            f'inline; filename="{document.title}.pdf"'
+        )
+        return response
 
     @action(detail=True, methods=['post'])
     def reprocess(self, request, pk=None):

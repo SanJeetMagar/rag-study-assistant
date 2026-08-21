@@ -14,6 +14,7 @@ import {DashboardLayout} from "./layouts/DashboardLayout";
 import {ChatPage} from "./pages/ChatPage";
 import {CourseDetailPage} from "./pages/CourseDetailPage";
 import {DashboardPage} from "./pages/DashboardPage";
+import {DocumentViewerPage} from "./pages/DocumentViewerPage";
 import {LandingPage} from "./pages/LandingPage";
 import {LoginPage} from "./pages/LoginPage";
 import {NotFoundPage} from "./pages/NotFoundPage";
@@ -74,6 +75,14 @@ const AppRoutes: React.FC = () => {
         element={
           <Protected>
             <ChatPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/documents/:documentId"
+        element={
+          <Protected>
+            <DocumentViewerPage />
           </Protected>
         }
       />
