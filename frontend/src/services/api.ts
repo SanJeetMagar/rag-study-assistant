@@ -6,6 +6,9 @@ import type {
   Message,
   Paginated,
   Role,
+  Quiz,
+  QuizAttempt,
+  QuizDetail,
   StudyDocument,
   User,
 } from "../types";
@@ -231,6 +234,44 @@ export const chat = {
   },
   async messages(sessionId: number) {
     const {data} = await api.get<Message[]>(`/chat/sessions/${sessionId}/messages/`);
+    return data;
+  },
+};
+
+export const quizzes = {
+  async listForDocument(documentId: number) {
+    const {data} = await api.get<Paginated<Quiz>>(`/quizzes/?document_id=${documentId}`);
+    return data.results;
+  },
+  async get(id: number) {
+    const {data} = await api.get<QuizDetail>(`/quizzes/${id}/`);
+    return data;
+  },
+  async create(documentId: number, title: string) {
+    const {data} = await api.post<Quiz>("/quizzes/", {document: documentId, title});
+    return data;
+  },
+  async status(id: number) {
+    const {data} = await api.get<Quiz>(`/quizzes/${id}/status/`);
+    return data;
+  },
+  async regenerate(id: number) {
+    const {data} = await api.post<Quiz>(`/quizzes/${id}/regenerate/`);
+    return data;
+  },
+  async remove(id: number) {
+    await api.delete(`/quizzes/${id}/`);
+  },
+  /** Submit a whole attempt and get it back marked. */
+  async submit(
+    id: number,
+    answers: {question_id: number; selected_index?: number | null; text_answer?: string}[],
+  ) {
+    const {data} = await api.post<QuizAttempt>(`/quizzes/${id}/submit/`, {answers});
+    return data;
+  },
+  async attempts(id: number) {
+    const {data} = await api.get<QuizAttempt[]>(`/quizzes/${id}/attempts/`);
     return data;
   },
 };

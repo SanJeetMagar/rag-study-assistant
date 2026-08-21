@@ -84,3 +84,63 @@ export interface Paginated<T> {
   previous: string | null;
   results: T[];
 }
+
+// ------------------------------------------------------------------ quizzes
+
+export type QuizStatus = "pending" | "generating" | "ready" | "error";
+export type QuestionKind = "mcq" | "short";
+
+export interface Quiz {
+  id: number;
+  document: number;
+  document_title: string;
+  title: string;
+  created_at: string;
+  status: QuizStatus;
+  error_message: string;
+  question_count: number;
+  /** Best percentage this user has scored, or null if never attempted. */
+  best_score: number | null;
+}
+
+/** A question while answering. The answer key is deliberately absent. */
+export interface TakingQuestion {
+  id: number;
+  order: number;
+  kind: QuestionKind;
+  text: string;
+  options: string[];
+}
+
+/** The same question after submitting, when showing the answer is the point. */
+export interface ReviewQuestion extends TakingQuestion {
+  correct_index: number | null;
+  expected_answer: string;
+  explanation: string;
+  source_page: number | null;
+  source_document_id: number | null;
+}
+
+export interface QuizDetail extends Quiz {
+  questions: TakingQuestion[];
+}
+
+export interface MarkedAnswer {
+  id: number;
+  question: ReviewQuestion;
+  selected_index: number | null;
+  text_answer: string;
+  is_correct: boolean;
+  feedback: string;
+}
+
+export interface QuizAttempt {
+  id: number;
+  quiz: number;
+  started_at: string;
+  completed_at: string | null;
+  score: number;
+  total: number;
+  percentage: number;
+  answers: MarkedAnswer[];
+}

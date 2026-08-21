@@ -15,6 +15,7 @@ import {ChatPage} from "./pages/ChatPage";
 import {CourseDetailPage} from "./pages/CourseDetailPage";
 import {DashboardPage} from "./pages/DashboardPage";
 import {DocumentViewerPage} from "./pages/DocumentViewerPage";
+import {QuizPage} from "./pages/QuizPage";
 import {LandingPage} from "./pages/LandingPage";
 import {LoginPage} from "./pages/LoginPage";
 import {NotFoundPage} from "./pages/NotFoundPage";
@@ -83,6 +84,14 @@ const AppRoutes: React.FC = () => {
         element={
           <Protected>
             <DocumentViewerPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/quizzes/:quizId"
+        element={
+          <Protected>
+            <QuizPage />
           </Protected>
         }
       />

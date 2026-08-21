@@ -104,11 +104,24 @@ def require_course_manager(user, course, action='change this'):
 # ------------------------------------------------------ DRF permission classes
 
 class IsCourseTeacher(permissions.BasePermission):
-    """Read for any member; write only for whoever manages the course."""
+    """
+    Read for any member; write only for whoever manages the course.
+
+    "Write" here means changing the course itself. Changing your *own*
+    membership -- joining, leaving -- is a different thing that happens to use
+    POST, and those actions opt out via `membership_action` below. Treating
+    every POST as a course edit is what made "leave" tell students the teacher
+    decides.
+    """
 
     message = 'Only the teacher who created this course can change it.'
 
+    #: Actions that alter the caller's own membership, not the course.
+    membership_actions = {'join', 'leave'}
+
     def has_object_permission(self, request, view, obj):
+        if getattr(view, 'action', None) in self.membership_actions:
+            return can_view_course(request.user, obj)
         if request.method in permissions.SAFE_METHODS:
             return can_view_course(request.user, obj)
         return can_manage_course(request.user, obj)

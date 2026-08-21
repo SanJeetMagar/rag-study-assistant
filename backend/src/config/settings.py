@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.courses',
     'apps.documents',
     'apps.chat',
+    'apps.quizzes',
 ]
 
 MIDDLEWARE = [

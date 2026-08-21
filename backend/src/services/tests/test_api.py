@@ -84,6 +84,33 @@ class CourseTests(ApiTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(other.students.filter(pk=self.student.pk).exists())
 
+    def test_student_can_leave_a_course_they_joined(self):
+        """
+        Leaving is a POST, and the course permission treated every POST as an
+        edit to the course -- so students were told the teacher decides. It is
+        a change to their own membership, not to the course.
+        """
+        self.auth(self.student)
+        response = self.client.post(f'/api/courses/{self.course.id}/leave/')
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(self.course.students.filter(pk=self.student.pk).exists())
+
+    def test_a_teacher_cannot_leave_their_own_course(self):
+        self.auth(self.teacher)
+        response = self.client.post(f'/api/courses/{self.course.id}/leave/')
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('cannot leave', response.data['detail'])
+
+    def test_leaving_a_course_you_are_not_in_is_refused(self):
+        outsider = User.objects.create_user(
+            username='nobody', email='nobody@tu.edu.np', password='x-y-z-123456'
+        )
+        self.auth(outsider)
+        response = self.client.post(f'/api/courses/{self.course.id}/leave/')
+        self.assertIn(response.status_code, (403, 404))
+
     def test_join_with_a_bad_code_is_rejected(self):
         self.auth(self.student)
         response = self.client.post(

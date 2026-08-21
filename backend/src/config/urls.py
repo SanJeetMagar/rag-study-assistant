@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/courses/', include('apps.courses.urls')),
     path('api/documents/', include('apps.documents.urls')),
     path('api/chat/', include('apps.chat.urls')),
+    path('api/quizzes/', include('apps.quizzes.urls')),
 
     # API documentation. The schema is the machine-readable OpenAPI file; the
     # other two are human interfaces onto it. Swagger UI can send live

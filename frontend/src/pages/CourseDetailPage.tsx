@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {Button} from "../components/Button";
 import {ConfirmDialog} from "../components/ConfirmDialog";
+import {DocumentQuizzes} from "../components/DocumentQuizzes";
 import {EmptyState} from "../components/EmptyState";
 import {ErrorBanner} from "../components/ErrorBanner";
 import {Input} from "../components/Input";
@@ -243,65 +244,77 @@ export const CourseDetailPage: React.FC = () => {
             return (
               <li
                 key={doc.id}
-                className="bg-white border border-amber-200 rounded-xl p-4 flex items-start gap-4"
+                className="bg-white border border-amber-200 rounded-xl p-4"
               >
-                <FileText size={20} className="text-rose-600 mt-0.5 shrink-0" />
+                <div className="flex items-start gap-4">
+                  <FileText size={20} className="text-rose-600 mt-0.5 shrink-0" />
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="t-subtitle truncate">
-                      {doc.title}
-                    </span>
-                    <StatusBadge status={doc.status} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="t-subtitle truncate">
+                        {doc.title}
+                      </span>
+                      <StatusBadge status={doc.status} />
+                    </div>
+
+                    <p className="t-meta mt-1">
+                      {doc.status === "ready"
+                        ? `${doc.total_chunks} passages · uploaded by ${doc.uploaded_by_email}`
+                        : doc.status === "error"
+                          ? doc.error_message
+                          : "Extracting text and building embeddings…"}
+                    </p>
                   </div>
 
-                  <p className="t-meta mt-1">
-                    {doc.status === "ready"
-                      ? `${doc.total_chunks} passages · uploaded by ${doc.uploaded_by_email}`
-                      : doc.status === "error"
-                        ? doc.error_message
-                        : "Extracting text and building embeddings…"}
-                  </p>
-                </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Link to={`/documents/${doc.id}`} aria-label={`Read ${doc.title}`}>
+                      <button className="p-2 rounded-md text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                        <Eye size={16} />
+                      </button>
+                    </Link>
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <Link to={`/documents/${doc.id}`} aria-label={`Read ${doc.title}`}>
-                    <button className="p-2 rounded-md text-zinc-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
-                      <Eye size={16} />
-                    </button>
-                  </Link>
-
-                  {isTeacher && (
-                    <>
-                      {doc.status === "error" && (
+                    {isTeacher && (
+                      <>
+                        {doc.status === "error" && (
+                          <button
+                            onClick={() => reprocess.mutate(doc.id)}
+                            aria-label="Try again"
+                            className="p-2 rounded-md text-zinc-400 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                          >
+                            <RotateCw size={16} />
+                          </button>
+                        )}
                         <button
-                          onClick={() => reprocess.mutate(doc.id)}
-                          aria-label="Try again"
-                          className="p-2 rounded-md text-zinc-400 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                          onClick={() => {
+                            setRenaming(doc);
+                            setRenameTo(doc.title);
+                          }}
+                          aria-label={`Rename ${doc.title}`}
+                          className="p-2 rounded-md text-zinc-400 hover:text-slate-700 hover:bg-zinc-100 transition-colors"
                         >
-                          <RotateCw size={16} />
+                          <Pencil size={16} />
                         </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setRenaming(doc);
-                          setRenameTo(doc.title);
-                        }}
-                        aria-label={`Rename ${doc.title}`}
-                        className="p-2 rounded-md text-zinc-400 hover:text-slate-700 hover:bg-zinc-100 transition-colors"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        onClick={() => setDeletingDoc(doc)}
-                        aria-label={`Delete ${doc.title}`}
-                        className="p-2 rounded-md text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </>
-                  )}
+                        <button
+                          onClick={() => setDeletingDoc(doc)}
+                          aria-label={`Delete ${doc.title}`}
+                          className="p-2 rounded-md text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+
+                {/* Quizzes only make sense once the passages exist to write
+                    questions from. */}
+                {doc.status === "ready" && (
+                  <DocumentQuizzes
+                    documentId={doc.id}
+                    documentTitle={doc.title}
+                    canManage={isTeacher}
+                  />
+                )}
               </li>
             );
           })}
